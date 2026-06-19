@@ -26,6 +26,7 @@ tenant returns `404`, which avoids confirming that the row exists.
 | `/actuator/health/**`, `/actuator/info` | Public |
 | `/api/work-items/**` | Authenticated |
 | `POST /api/agent/plan` | `MEMBER` or `ADMIN` |
+| `POST /api/agent/runs/{id}/approve` | `ADMIN` |
 | `GET /api/agent/runs` | `ADMIN` |
 
 ## Configuration

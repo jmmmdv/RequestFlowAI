@@ -78,7 +78,7 @@ class TenantIsolationSecurityTest {
                         .header("X-Correlation-ID", "security-test-42")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"goal":"Verify tenant security","createWorkItems":true}
+                                {"goal":"Verify tenant boundaries","createWorkItems":true}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.runId").isNotEmpty())

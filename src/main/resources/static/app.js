@@ -1,10 +1,13 @@
 const board = document.querySelector('#board');
 const errorBox = document.querySelector('#error');
+const runBoard = document.querySelector('#run-board');
+const runError = document.querySelector('#run-error');
 
 async function api(path, options = {}) {
+  const { headers = {}, ...requestOptions } = options;
   const response = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
+    ...requestOptions,
+    headers: { 'Content-Type': 'application/json', ...headers },
   });
   if (!response.ok) {
     const problem = await response.json().catch(() => ({}));
@@ -24,6 +27,53 @@ async function loadItems() {
     render(extractItems(document));
   } catch (error) {
     errorBox.textContent = error.message;
+  }
+}
+
+async function loadRuns() {
+  runError.textContent = '';
+  try {
+    renderRuns(await api('/api/agent/runs'));
+  } catch (error) {
+    runError.textContent = error.message;
+  }
+}
+
+function renderRuns(runs) {
+  runBoard.replaceChildren();
+  if (!runs.length) {
+    runBoard.textContent = 'No agent decisions yet.';
+    return;
+  }
+  for (const run of runs) {
+    const view = document.querySelector('#run-template').content.cloneNode(true);
+    const article = view.querySelector('article');
+    article.dataset.runId = run.id;
+    const outcome = view.querySelector('.outcome');
+    outcome.textContent = run.outcome.replaceAll('_', ' ');
+    outcome.dataset.outcome = run.outcome;
+    view.querySelector('time').textContent = new Date(run.createdAt).toLocaleString();
+    view.querySelector('h3').textContent = run.goal;
+    view.querySelector('.run-meta').textContent = `${run.classification} · budget ${run.toolBudget} · ${run.createdWorkItems} tools used`;
+    view.querySelector('.run-identity').textContent = `User ${run.userId} · correlation ${run.correlationId}`;
+    const approve = view.querySelector('.approve');
+    if (run.outcome === 'PENDING_APPROVAL') {
+      approve.hidden = false;
+      approve.addEventListener('click', () => approveRun(run.id, approve));
+    }
+    runBoard.append(view);
+  }
+}
+
+async function approveRun(id, button) {
+  button.disabled = true;
+  try {
+    const response = await api(`/api/agent/runs/${id}/approve`, { method: 'POST' });
+    document.querySelector('#agent-result').textContent = `Approved: created ${response.createdWorkItemIds.length} work items.`;
+    await Promise.all([loadItems(), loadRuns()]);
+  } catch (error) {
+    runError.textContent = error.message;
+    button.disabled = false;
   }
 }
 
@@ -97,14 +147,28 @@ document.querySelector('#agent-form').addEventListener('submit', async (event) =
   submit.disabled = true;
   result.textContent = 'Agent is planning…';
   try {
-    const response = await api('/api/agent/plan', { method: 'POST', body: JSON.stringify({
-      goal: new FormData(event.currentTarget).get('goal'), createWorkItems: true,
-    }) });
-    result.textContent = `${response.classification}: created ${response.createdWorkItemIds.length} work items.`;
-    await loadItems();
+    const form = new FormData(event.currentTarget);
+    const response = await api('/api/agent/plan', {
+      method: 'POST',
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify({
+        goal: form.get('goal'), createWorkItems: form.has('createWorkItems'),
+        toolBudget: Number(form.get('toolBudget')),
+      }),
+    });
+    const messages = {
+      EXECUTED: `Executed safely: created ${response.createdWorkItemIds.length} work items.`,
+      PENDING_APPROVAL: 'Plan is ready and waiting for human approval.',
+      DRY_RUN: 'Dry run complete: no tools were called.',
+      BUDGET_EXCEEDED: 'Stopped safely: the tool-call budget is too small for this plan.',
+      BLOCKED: 'Blocked by safety policy: no tools were called.',
+    };
+    result.textContent = `${response.classification}: ${messages[response.outcome]}`;
+    await Promise.all([loadItems(), loadRuns()]);
   } catch (error) { result.textContent = error.message; }
   finally { submit.disabled = false; }
 });
 
 document.querySelector('#refresh').addEventListener('click', loadItems);
-loadItems();
+document.querySelector('#refresh-runs').addEventListener('click', loadRuns);
+Promise.all([loadItems(), loadRuns()]);

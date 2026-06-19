@@ -45,7 +45,8 @@ Open [http://localhost:8080](http://localhost:8080). In another terminal:
 curl http://localhost:8080/api/work-items
 curl -X POST http://localhost:8080/api/agent/plan \
   -H 'Content-Type: application/json' \
-  -d '{"goal":"Deploy the REST API to AWS","createWorkItems":true}'
+  -H 'Idempotency-Key: demo-deploy-001' \
+  -d '{"goal":"Deploy the REST API to AWS","createWorkItems":true,"toolBudget":3}'
 ```
 
 Run all automated checks:
@@ -85,6 +86,8 @@ reviewed migration. Production credentials belong in `DATABASE_USERNAME` and
 | Migrations work on PostgreSQL | `PostgreSqlApiIntegrationTest` runs Flyway and API persistence in Testcontainers |
 | API behavior is discoverable | `/swagger-ui.html`, `/v3/api-docs`, and `OpenApiDocumentationTest` |
 | Agent activity is attributable | `agent_run` stores tenant, user, correlation ID, outcome, and timestamp |
+| High-impact actions need a person | `AgentPolicyEngine` pauses execution and the approval API is idempotent |
+| Agent behavior cannot silently regress | `AgentEvaluationTest` gates 27 golden and adversarial cases in CI |
 | Main cannot silently lose coverage | JaCoCo fails `verify` below 80% line coverage |
 | User journeys work in a browser | Playwright covers dashboard, agent, status, and REST CRUD workflows |
 
@@ -92,7 +95,7 @@ reviewed migration. Production credentials belong in `DATABASE_USERNAME` and
 
 1. Start the app and open the dashboard screenshot or live UI.
 2. Use Swagger UI to create and update a work item, then inspect its HAL links.
-3. Run an agent goal and show the returned `runId` plus `/api/agent/runs` audit record.
+3. Run an urgent production goal, show that zero tools run, then approve it from the audit trail.
 4. Open `TenantIsolationSecurityTest` to explain why tenant identity never comes from input data.
 5. Run `./mvnw clean verify` and show the PostgreSQL test and JaCoCo report under
    `target/site/jacoco/index.html`.
@@ -112,7 +115,7 @@ reviewed migration. Production credentials belong in `DATABASE_USERNAME` and
 | Jenkins | `Jenkinsfile` | Build, unit test, E2E test, package, archive evidence |
 | AWS | `infrastructure/aws/` | Containerize, push to ECR, deploy App Runner via CloudFormation |
 | UiPath | `docs/uipath/INTEGRATION-LAB.md` | Let an RPA workflow call the REST API without scraping the UI |
-| AI agents | `agent/PlanningAgent.java` | Classify a goal, create a plan, invoke a tool, return an audit trail |
+| AI agents | `agent/AgentOrchestrator.java` | Classify, enforce policy and budgets, invoke typed tools, audit every outcome |
 | Agentic AI | `docs/architecture/AGENTIC-AI.md` | Add guardrails, idempotency, approval, memory, evaluation |
 | SaaS security | `docs/security/PRODUCTION-SECURITY.md` | JWT roles, trusted tenant context, isolation tests, audit trail |
 | Intelligent automation | Full system | Combine API, rules, browser automation, RPA, CI, and cloud |
@@ -130,7 +133,8 @@ flowchart LR
   User["User / UiPath"] --> UI["JavaScript dashboard"]
   UI --> API["Spring REST + HATEOAS"]
   User --> API
-  API --> Agent["Planning agent"]
+  API --> Agent["Bounded agent orchestrator"]
+  Agent --> Policy["Safety + approval policy"]
   Agent --> Tool["Work-item tool"]
   Tool --> DB[("H2 / PostgreSQL")]
   API --> DB
@@ -155,6 +159,7 @@ an LLM belongs while keeping deterministic tests and safety controls.
 | `PATCH` | `/api/work-items/{id}/status` | Change status without replacing the item |
 | `DELETE` | `/api/work-items/{id}` | Delete and return `204` |
 | `POST` | `/api/agent/plan` | Dry-run or execute an auditable three-step plan |
+| `POST` | `/api/agent/runs/{id}/approve` | Approve one pending high-impact plan; safe to retry |
 | `GET` | `/api/agent/runs` | Tenant-scoped agent audit history (production: admin only) |
 | `GET` | `/actuator/health` | CI/cloud health probe |
 
@@ -165,7 +170,8 @@ an LLM belongs while keeping deterministic tests and safety controls.
 3. **Quality engineer:** add Playwright edit/delete cases and diagnose a trace from a forced failure.
 4. **Delivery engineer:** run the Jenkins pipeline and deploy an immutable image to AWS.
 5. **Automation engineer:** complete the UiPath API workflow with retry and business exceptions.
-6. **Agent engineer:** add a new tool, approval policy, execution budget, and evaluation dataset.
+6. **Agent engineer (complete):** typed planner seam, human approval, execution budget,
+   tenant-scoped idempotency, audit UI, and a 27-case evaluation gate.
 7. **Capstone (in progress):** run PostgreSQL in production, secure every tenant, add
    observability, and operate the service against measurable reliability targets.
 

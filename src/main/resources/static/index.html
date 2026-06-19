@@ -25,8 +25,30 @@
                  placeholder="Deploy our REST service to AWS">
           <button type="submit">Build plan</button>
         </div>
+        <div class="agent-controls">
+          <label class="check-control"><input type="checkbox" name="createWorkItems" checked> Execute safe plans</label>
+          <label>Tool-call budget
+            <select name="toolBudget" aria-label="Tool-call budget">
+              <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
+            </select>
+          </label>
+          <span>High-impact missions wait for human approval.</span>
+        </div>
       </form>
       <p id="agent-result" class="result" role="status"></p>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">GOVERNANCE EVIDENCE</p>
+          <h2>Agent audit trail</h2>
+        </div>
+        <button id="refresh-runs" class="secondary">Refresh audits</button>
+      </div>
+      <p class="description">Every decision is tenant-scoped, attributable, budgeted, and safe to retry.</p>
+      <div id="run-error" class="error" role="alert"></div>
+      <div id="run-board" class="run-board" aria-live="polite"></div>
     </section>
 
     <section class="panel">
@@ -65,6 +87,15 @@
           </select>
         </label>
       </div>
+    </article>
+  </template>
+  <template id="run-template">
+    <article class="run-card">
+      <div class="card-top"><span class="outcome"></span><time></time></div>
+      <h3></h3>
+      <p class="run-meta"></p>
+      <p class="run-identity"></p>
+      <button class="approve" hidden>Approve &amp; execute</button>
     </article>
   </template>
   <script type="module" src="/app.js"></script>

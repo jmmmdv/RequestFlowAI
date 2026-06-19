@@ -19,6 +19,40 @@ test('agent decomposes a goal into three work items', async ({ page }) => {
 
   await expect(page.getByRole('status')).toContainText('created 3 work items');
   await expect(page.locator('.card').filter({ hasText: 'Deploy the REST API to AWS' })).toHaveCount(3);
+  await expect(page.locator('.run-card').filter({ hasText: 'Deploy the REST API to AWS' })).toContainText('EXECUTED');
+});
+
+test('high-impact agent work requires approval before tools run', async ({ page }) => {
+  await page.goto('/');
+  const goal = `Fix urgent production outage ${Date.now()}`;
+  await page.getByLabel('Goal').fill(goal);
+  await page.getByRole('button', { name: 'Build plan' }).click();
+
+  await expect(page.getByRole('status')).toContainText('waiting for human approval');
+  await expect(page.locator('.card').filter({ hasText: goal })).toHaveCount(0);
+
+  const audit = page.locator('.run-card').filter({ hasText: goal });
+  await expect(audit).toContainText('PENDING APPROVAL');
+  await audit.getByRole('button', { name: 'Approve & execute' }).click();
+
+  await expect(page.locator('.run-card').filter({ hasText: goal })).toContainText('EXECUTED');
+  await expect(page.locator('.card').filter({ hasText: goal })).toHaveCount(3);
+});
+
+test('agent API is idempotent for the same tenant and key', async ({ request }) => {
+  const key = `playwright-${Date.now()}`;
+  const data = { goal: 'Create an idempotent API test', createWorkItems: true, toolBudget: 3 };
+  const first = await request.post('/api/agent/plan', { data, headers: { 'Idempotency-Key': key } });
+  const second = await request.post('/api/agent/plan', { data, headers: { 'Idempotency-Key': key } });
+
+  expect(first.status()).toBe(200);
+  expect(second.status()).toBe(200);
+  const firstBody = await first.json();
+  const secondBody = await second.json();
+  expect(secondBody.runId).toBe(firstBody.runId);
+  expect(secondBody.createdWorkItemIds).toEqual(firstBody.createdWorkItemIds);
+  expect(secondBody.outcome).toBe('EXECUTED');
+  expect(second.headers()['idempotency-key']).toBe(key);
 });
 
 test('moves a work item through the board and updates the summary', async ({ page }) => {
