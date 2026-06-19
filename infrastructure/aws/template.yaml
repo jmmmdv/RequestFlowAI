@@ -478,6 +478,8 @@ Resources:
               - { Name: DATABASE_USERNAME, Value: !Ref DatabaseUsername }
               - { Name: OAUTH2_ISSUER_URI, Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}' }
               - { Name: FRONTEND_URL, Value: !Ref FrontendUrl }
+              - { Name: INTAKE_RATE_LIMIT_ENABLED, Value: 'true' }
+              - { Name: INTAKE_RATE_LIMIT_REQUESTS_PER_MINUTE, Value: '10' }
               - { Name: STRIPE_PRO_PRICE_ID, Value: !Ref StripeProPriceId }
               - { Name: STRIPE_BUSINESS_PRICE_ID, Value: !Ref StripeBusinessPriceId }
               - { Name: TRACING_ENABLED, Value: !If [HasOtlpEndpoint, 'true', 'false'] }

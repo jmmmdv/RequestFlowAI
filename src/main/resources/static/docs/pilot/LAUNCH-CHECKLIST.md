@@ -8,15 +8,15 @@ Record the date and result when each drill is actually executed. Do not check an
 ## Public intake protection
 
 - [x] Rate limiting, honeypot, retention, and portal tokens implemented in code
-- [ ] Enable `mission.intake.rate-limit.enabled=true` in production (or equivalent WAF limits)
+- [x] Enable `mission.intake.rate-limit.enabled=true` in production (App Runner env `INTAKE_RATE_LIMIT_ENABLED`)
 - [ ] Verify honeypot on the live public form
 - [ ] Configure retention days for pilot organization
 - [ ] Publish [PRIVACY.md](PRIVACY.md) beside the public form
 
 ## Identity and onboarding
 
-- [ ] Cognito signup creates tenant claim and founder ADMIN membership — [drill 1](../saas/EXTERNAL-DRILLS.md#drill-1--cognito-signup-and-start-free-onboarding)
-- [ ] **Start free** completes workspace setup (name + slug)
+- [x] Cognito signup creates tenant claim and founder ADMIN membership — [drill 1](../saas/EXTERNAL-DRILLS.md#drill-1--cognito-signup-and-start-free-onboarding)
+- [x] **Start free** completes workspace setup (name + slug)
 - [ ] Invitation accept works for matching email
 - [ ] Invitation transfer drill updates Cognito tenant attribute and groups — [drill 2](../saas/EXTERNAL-DRILLS.md#drill-2--team-invitation-and-cognito-tenant-transfer)
 
@@ -29,6 +29,8 @@ Record the date and result when each drill is actually executed. Do not check an
 ## Operations
 
 - [ ] AWS restore drill completed — [drill 4](../saas/EXTERNAL-DRILLS.md#drill-4--aws-postgresql-restore)
+- [x] RDS backup retention and latest restorable time verified — `./scripts/drills/verify-rds-backups.sh`
+- [ ] Confirm SNS alarm email subscription (check inbox for `jmmmdv@gmail.com`)
 - [ ] Health checks and alerts configured for API and database
 - [ ] Pilot [ONBOARDING.md](ONBOARDING.md) and [SUPPORT.md](SUPPORT.md) shared with first customer
 

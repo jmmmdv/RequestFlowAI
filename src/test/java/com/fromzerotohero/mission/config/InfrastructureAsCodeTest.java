@@ -64,6 +64,8 @@ class InfrastructureAsCodeTest {
         assertThat(Path.of("scripts/drills/verify-prerequisites.sh")).exists();
         assertThat(Path.of("scripts/drills/record-drill.sh")).exists();
         assertThat(Path.of("scripts/drills/deploy-cognito-trigger.sh")).exists();
+        assertThat(Path.of("scripts/drills/setup-stripe-sandbox.sh")).exists();
+        assertThat(Path.of("scripts/drills/verify-rds-backups.sh")).exists();
     }
 
     @Test
