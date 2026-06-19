@@ -7,3 +7,6 @@ test-results/
 *.iml
 .DS_Store
 .env
+.vercel
+.requestflow-vercel-env.txt
+post-deploy-setup.log
