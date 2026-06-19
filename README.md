@@ -54,7 +54,7 @@ validation remain before a commercial launch claim would be honest.
 | Public request form | Dedicated shareable page, slug-resolved portal, requester metadata, reference, idempotent submission | Implemented and tested |
 | Request-specific classification | Rule-based category, summary, priority suggestion, and next action | Implemented foundation; not an LLM |
 | Customer-facing landing and pricing | Responsive value proposition, plan limits, and calls to action | Implemented |
-| Start Free onboarding | Self-serve workspace setup after Cognito sign-in; onboarding wizard and API tested | Implemented foundation; live Cognito drill pending |
+| Start Free onboarding | Self-serve workspace setup after Cognito sign-in; onboarding wizard and API tested | Live production drill passed — see [DRILL-LOG.md](docs/saas/DRILL-LOG.md) |
 
 ## Why the engineering foundation matters
 
@@ -258,7 +258,8 @@ planning assistants are deterministic rules, not an external LLM.
 
 - [x] Add production rate limiting, bot protection, request-retention controls, and optional unguessable portal tokens
 - [x] Complete and test the production-backed Start Free onboarding journey
-- [ ] Run and record Cognito signup, invitation transfer, and Stripe test Checkout drills — [EXTERNAL-DRILLS.md](docs/saas/EXTERNAL-DRILLS.md) and [DRILL-LOG.md](docs/saas/DRILL-LOG.md)
+- [x] Run and record Cognito signup drill — [EXTERNAL-DRILLS.md](docs/saas/EXTERNAL-DRILLS.md) and [DRILL-LOG.md](docs/saas/DRILL-LOG.md)
+- [ ] Run and record invitation transfer and Stripe test Checkout drills — [EXTERNAL-DRILLS.md](docs/saas/EXTERNAL-DRILLS.md)
 - [ ] Run and record the AWS restore drill — [RESTORE-DRILL.md](docs/operations/RESTORE-DRILL.md)
 - [x] Add pilot onboarding, support, privacy, and data-retention documentation
 - [ ] Validate the workflow with first pilot users before claiming commercial launch readiness

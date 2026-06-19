@@ -15,7 +15,8 @@ async function challenge(verifier) {
 }
 
 function redirectUri() {
-  return `${location.origin}${location.pathname}`;
+  const path = location.pathname.replace(/\/$/, '');
+  return `${location.origin}${path}`;
 }
 
 export function authenticationConfigured() {

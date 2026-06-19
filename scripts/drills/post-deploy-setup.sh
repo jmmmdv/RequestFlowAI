@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 STACK_NAME="${STACK_NAME:-automation-mission-control}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
-FRONTEND_URL="${FRONTEND_URL:-https://from-zero-to-hero-lnjqfnihf-jmmmdv-5485s-projects.vercel.app}"
+FRONTEND_URL="${FRONTEND_URL:-https://from-zero-to-hero-azure.vercel.app}"
 COGNITO_PREFIX="${COGNITO_PREFIX:-jeyhun-requestflow-2026}"
 ALARM_EMAIL="${ALARM_EMAIL:-jmmmdv@gmail.com}"
 
@@ -39,6 +39,9 @@ aws cloudformation deploy \
     FrontendUrl="$FRONTEND_URL" \
     CognitoDomainPrefix="$COGNITO_PREFIX" \
     AlarmEmail="$ALARM_EMAIL"
+
+echo "==> Deploying Cognito trigger (bundles AWS SDK for tenant_id provisioning)"
+"$ROOT/scripts/drills/deploy-cognito-trigger.sh"
 
 echo "==> Stack outputs"
 aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$AWS_REGION" \

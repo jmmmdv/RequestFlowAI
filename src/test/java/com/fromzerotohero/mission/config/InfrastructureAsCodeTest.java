@@ -45,6 +45,7 @@ class InfrastructureAsCodeTest {
                 .contains("Type: AWS::Cognito::UserPoolClient")
                 .contains("AllowedOAuthFlows: [code]")
                 .contains("custom:tenant_id")
+                .contains("AdminUpdateUserAttributes")
                 .contains("UserPoolId:")
                 .contains("STRIPE_WEBHOOK_SECRET")
                 .contains("StripeWebhookSecretArn");
@@ -62,6 +63,7 @@ class InfrastructureAsCodeTest {
         assertThat(Path.of("docs/saas/DRILL-LOG.md")).exists();
         assertThat(Path.of("scripts/drills/verify-prerequisites.sh")).exists();
         assertThat(Path.of("scripts/drills/record-drill.sh")).exists();
+        assertThat(Path.of("scripts/drills/deploy-cognito-trigger.sh")).exists();
     }
 
     @Test
