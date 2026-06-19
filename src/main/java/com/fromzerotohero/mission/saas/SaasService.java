@@ -51,8 +51,8 @@ public class SaasService {
     public OrganizationOverview rename(UpdateOrganizationRequest request) {
         TenantOrganization organization = ensureCurrentOrganization();
         String slug = normalizeSlug(request.slug());
-        organizations.findAll().stream().filter(candidate -> candidate.getSlug().equals(slug))
-                .filter(candidate -> !candidate.getId().equals(organization.getId())).findAny()
+        organizations.findBySlug(slug)
+                .filter(candidate -> !candidate.getId().equals(organization.getId()))
                 .ifPresent(candidate -> { throw new SaasException(HttpStatus.CONFLICT, "Organization slug is already used"); });
         organization.rename(normalizeName(request.name()), slug);
         return current();
