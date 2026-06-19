@@ -135,6 +135,38 @@ async function api(path, options = {}) {
   return response.status === 204 ? null : response.json();
 }
 
+const planRank = { FREE: 0, PRO: 1, BUSINESS: 2 };
+
+function renderMeter(prefix, used, limit) {
+  const ratio = limit > 0 ? Math.min(used / limit, 1) : 0;
+  const bar = document.querySelector(`#${prefix}-bar`);
+  bar.style.width = `${Math.round(ratio * 100)}%`;
+  bar.dataset.level = ratio >= 0.9 ? 'critical' : ratio >= 0.7 ? 'warning' : 'healthy';
+  document.querySelector(`#${prefix}-figure`).textContent = `${used} / ${limit}`;
+}
+
+function renderUsage(organization) {
+  const usage = organization.usage;
+  renderMeter('work-items', usage.workItemsUsed, usage.workItemsLimit);
+  renderMeter('agent-runs', usage.agentRunsUsed, usage.agentRunsLimit);
+  document.querySelector('#usage-meters').hidden = false;
+
+  const subscription = organization.subscriptionStatus && organization.subscriptionStatus !== 'ACTIVE'
+    ? ` · subscription ${organization.subscriptionStatus.toLowerCase()}` : '';
+  const meta = document.querySelector('#saas-meta');
+  meta.textContent = `Signed in as ${organization.currentUserRole}` +
+    `${organization.billingConfigured ? ' · billing connected' : ''}${subscription}`;
+  meta.hidden = false;
+
+  const note = document.querySelector('#plan-note');
+  for (const button of document.querySelectorAll('.upgrade')) {
+    button.hidden = planRank[button.dataset.plan] <= planRank[organization.plan];
+  }
+  const onTopPlan = planRank[organization.plan] >= planRank.BUSINESS;
+  note.hidden = !onTopPlan;
+  if (onTopPlan) note.textContent = 'You are on the top plan.';
+}
+
 async function loadOrganization() {
   if (authenticationConfigured() && !authState.authenticated && !demoMode) return;
   try {
@@ -144,19 +176,42 @@ async function loadOrganization() {
     document.querySelector('#usage-summary').textContent =
       `${organization.usage.workItemsUsed}/${organization.usage.workItemsLimit} work items · ` +
       `${organization.usage.agentRunsUsed}/${organization.usage.agentRunsLimit} agent runs this month`;
+    renderUsage(organization);
   } catch (error) {
     document.querySelector('#usage-summary').textContent = error.message;
+    document.querySelector('#usage-meters').hidden = true;
+    document.querySelector('#saas-meta').hidden = true;
   }
+}
+
+function showBillingReturn() {
+  const params = new URLSearchParams(location.search);
+  const outcome = params.get('billing');
+  if (!outcome) return;
+  const notice = document.querySelector('#billing-notice');
+  notice.textContent = outcome === 'success'
+    ? 'Payment confirmed. Your plan updates as soon as Stripe finishes processing.'
+    : 'Checkout was cancelled. Your plan is unchanged.';
+  notice.dataset.outcome = outcome;
+  notice.hidden = false;
+  params.delete('billing');
+  params.delete('session_id');
+  const query = params.toString();
+  history.replaceState({}, '', location.pathname + (query ? `?${query}` : ''));
 }
 
 for (const button of document.querySelectorAll('.upgrade')) {
   button.addEventListener('click', async () => {
+    button.disabled = true;
     try {
       const response = await api('/api/billing/checkout', { method: 'POST', body: JSON.stringify({
         plan: button.dataset.plan, idempotencyKey: crypto.randomUUID(),
       }) });
       location.assign(response.checkoutUrl);
-    } catch (error) { document.querySelector('#usage-summary').textContent = error.message; }
+    } catch (error) {
+      document.querySelector('#usage-summary').textContent = error.message;
+      button.disabled = false;
+    }
   });
 }
 
@@ -315,4 +370,5 @@ document.querySelector('#agent-form').addEventListener('submit', async (event) =
 
 document.querySelector('#refresh').addEventListener('click', loadItems);
 document.querySelector('#refresh-runs').addEventListener('click', loadRuns);
+showBillingReturn();
 Promise.all([loadItems(), loadRuns(), loadOrganization()]);

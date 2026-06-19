@@ -15,7 +15,23 @@ main { display:grid; gap:24px; padding-bottom:64px; }
 .agent-panel { border-color:#6655a2; background:linear-gradient(135deg,#201a3a,#111c2d 70%); }
 .saas-panel { border-color:#2d6c60; background:linear-gradient(135deg,#102b2c,#111c2d 70%); }
 .plan-badge { padding:7px 10px; border:1px solid #2d6c60; border-radius:999px; color:var(--accent); font-size:.72rem; font-weight:900; }
-.upgrade-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.billing-notice { display:inline-flex; margin:4px 0 0; padding:10px 14px; border-radius:12px; font-size:.82rem; border:1px solid #2d6c60; color:var(--accent); background:#0a1424; }
+.billing-notice[hidden] { display:none; }
+.billing-notice[data-outcome="cancelled"] { color:#fbbf24; border-color:#b45309; }
+.usage-meters { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin:18px 0 4px; }
+.usage-meters[hidden] { display:none; }
+.meter-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; color:var(--muted); font-size:.78rem; }
+.meter-figure { color:var(--ink); font-weight:800; font-variant-numeric:tabular-nums; }
+.meter-track { height:10px; border-radius:999px; background:#0a1424; border:1px solid var(--line); overflow:hidden; }
+.meter-fill { height:100%; width:0; border-radius:999px; background:var(--accent); transition:width .4s ease; }
+.meter-fill[data-level="warning"] { background:#fbbf24; }
+.meter-fill[data-level="critical"] { background:#fb7185; }
+.saas-meta { margin:6px 0 16px; color:var(--muted); font-size:.8rem; }
+.saas-meta[hidden] { display:none; }
+.plan-note { align-self:center; color:var(--muted); font-size:.8rem; }
+.plan-note[hidden] { display:none; }
+.upgrade-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.upgrade[hidden] { display:none; }
 .section-heading,.form-row,.work-form,.card-top { display:flex; gap:12px; align-items:end; justify-content:space-between; }
 .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
 .stats div { display:grid; padding:14px; background:#0a1424; border:1px solid var(--line); border-radius:12px; }

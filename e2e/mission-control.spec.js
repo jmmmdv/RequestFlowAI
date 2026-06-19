@@ -21,6 +21,16 @@ test('shows the authenticated SaaS organization plan and quota usage', async ({ 
   await expect(page.locator('#usage-summary')).toContainText('/10 agent runs this month');
 });
 
+test('renders quota meters and offers an upgrade on the free plan', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.locator('#usage-meters')).toBeVisible();
+  await expect(page.locator('#work-items-figure')).toContainText('/ 25');
+  await expect(page.locator('#agent-runs-figure')).toContainText('/ 10');
+  await expect(page.locator('#saas-meta')).toContainText('ADMIN');
+  await expect(page.getByRole('button', { name: 'Upgrade to Pro' })).toBeVisible();
+});
+
 test('agent decomposes a goal into three work items', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Goal').fill('Deploy the REST API to AWS');
