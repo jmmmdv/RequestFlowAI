@@ -45,6 +45,36 @@
         <span id="plan-note" class="plan-note" hidden></span>
       </div>
     </section>
+    <section id="team-panel" class="panel saas-panel" hidden>
+      <div class="section-heading">
+        <div><p class="eyebrow">TEAM &amp; ACCESS</p><h2>Members and invitations</h2></div>
+        <button id="refresh-team" class="secondary">Refresh</button>
+      </div>
+      <p class="description">Invite teammates with a role. An invitation link is shown once at creation, so copy it before leaving.</p>
+      <form id="invite-form" class="work-form">
+        <label>Email<input name="email" type="email" required maxlength="254" placeholder="teammate@example.com"></label>
+        <label>Role
+          <select name="role"><option>ADMIN</option><option selected>MEMBER</option><option>VIEWER</option></select>
+        </label>
+        <button type="submit">Send invite</button>
+      </form>
+      <div id="invite-result" class="invite-result" role="status" hidden>
+        <span id="invite-message"></span>
+        <code id="invite-token"></code>
+        <button id="copy-token" type="button" class="secondary">Copy</button>
+      </div>
+      <div id="team-error" class="error" role="alert"></div>
+      <div class="team-grid">
+        <div>
+          <h3 class="team-subhead">Members</h3>
+          <div id="members-list" class="team-list" aria-live="polite"></div>
+        </div>
+        <div>
+          <h3 class="team-subhead">Invitations</h3>
+          <div id="invitations-list" class="team-list" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
     <section class="panel agent-panel">
       <div>
         <p class="eyebrow">AGENTIC AUTOMATION</p>
@@ -120,6 +150,18 @@
         </label>
       </div>
     </article>
+  </template>
+  <template id="member-template">
+    <div class="team-row">
+      <div><strong class="member-email"></strong><span class="member-id"></span></div>
+      <span class="role-badge"></span>
+    </div>
+  </template>
+  <template id="invitation-template">
+    <div class="team-row">
+      <div><strong class="invitation-email"></strong><span class="invitation-meta"></span></div>
+      <span class="invitation-status"></span>
+    </div>
   </template>
   <template id="run-template">
     <article class="run-card">

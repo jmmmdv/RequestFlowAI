@@ -39,6 +39,13 @@ const initialDemoState = {
     correlationId: 'demo-correlation-001',
     createdAt: new Date().toISOString(),
   }],
+  members: [
+    { id: 'demo-member-1', tenantId: 'demo', userId: 'portfolio-viewer', email: 'you@example.com', role: 'ADMIN', joinedAt: new Date().toISOString() },
+    { id: 'demo-member-2', tenantId: 'demo', userId: 'demo-engineer', email: 'engineer@example.com', role: 'MEMBER', joinedAt: new Date().toISOString() },
+  ],
+  invitations: [
+    { id: 'demo-invite-1', tenantId: 'demo', email: 'teammate@example.com', role: 'VIEWER', invitedBy: 'portfolio-viewer', expiresAt: new Date(Date.now() + 6 * 86400000).toISOString(), acceptedAt: null, createdAt: new Date().toISOString() },
+  ],
 };
 
 function readDemoState() {
@@ -85,6 +92,20 @@ async function demoApi(path, options = {}) {
   };
   if (path === '/api/billing/checkout' && method === 'POST') {
     throw new Error('Billing checkout is disabled in the browser-local portfolio demo.');
+  }
+  if (path === '/api/saas/members' && method === 'GET') return state.members;
+  if (path === '/api/saas/invitations' && method === 'GET') return state.invitations;
+  if (path === '/api/saas/invitations' && method === 'POST') {
+    const request = JSON.parse(options.body);
+    const invitation = {
+      id: crypto.randomUUID(), tenantId: 'demo', email: request.email, role: request.role,
+      invitedBy: 'portfolio-viewer', expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+      acceptedAt: null, createdAt: new Date().toISOString(),
+    };
+    state.invitations.unshift(invitation);
+    saveDemoState(state);
+    return { invitationId: invitation.id, email: invitation.email, role: invitation.role,
+      expiresAt: invitation.expiresAt, token: `demo-${crypto.randomUUID().replaceAll('-', '')}` };
   }
   if (path === '/api/agent/plan' && method === 'POST') {
     const request = JSON.parse(options.body);
@@ -165,6 +186,8 @@ function renderUsage(organization) {
   const onTopPlan = planRank[organization.plan] >= planRank.BUSINESS;
   note.hidden = !onTopPlan;
   if (onTopPlan) note.textContent = 'You are on the top plan.';
+
+  document.querySelector('#team-panel').hidden = organization.currentUserRole !== 'ADMIN';
 }
 
 async function loadOrganization() {
@@ -183,6 +206,96 @@ async function loadOrganization() {
     document.querySelector('#saas-meta').hidden = true;
   }
 }
+
+function renderMembers(members) {
+  const list = document.querySelector('#members-list');
+  list.replaceChildren();
+  if (!members.length) { list.textContent = 'No members yet.'; return; }
+  for (const member of members) {
+    const row = document.querySelector('#member-template').content.cloneNode(true);
+    row.querySelector('.member-email').textContent = member.email || member.userId;
+    row.querySelector('.member-id').textContent = member.joinedAt
+      ? `joined ${new Date(member.joinedAt).toLocaleDateString()}` : '';
+    const badge = row.querySelector('.role-badge');
+    badge.textContent = member.role;
+    badge.dataset.role = member.role;
+    list.append(row);
+  }
+}
+
+function invitationStatus(invitation) {
+  if (invitation.acceptedAt) return 'accepted';
+  return new Date(invitation.expiresAt) < new Date() ? 'expired' : 'pending';
+}
+
+function renderInvitations(invitations) {
+  const list = document.querySelector('#invitations-list');
+  list.replaceChildren();
+  if (!invitations.length) { list.textContent = 'No invitations yet.'; return; }
+  for (const invitation of invitations) {
+    const row = document.querySelector('#invitation-template').content.cloneNode(true);
+    row.querySelector('.invitation-email').textContent = invitation.email;
+    row.querySelector('.invitation-meta').textContent =
+      `${invitation.role} · expires ${new Date(invitation.expiresAt).toLocaleDateString()}`;
+    const status = invitationStatus(invitation);
+    const badge = row.querySelector('.invitation-status');
+    badge.textContent = status;
+    badge.dataset.status = status;
+    list.append(row);
+  }
+}
+
+async function loadTeam() {
+  if (document.querySelector('#team-panel').hidden) return;
+  const teamError = document.querySelector('#team-error');
+  teamError.textContent = '';
+  try {
+    const [members, invitations] = await Promise.all([
+      api('/api/saas/members'), api('/api/saas/invitations'),
+    ]);
+    renderMembers(members);
+    renderInvitations(invitations);
+  } catch (error) {
+    teamError.textContent = error.message;
+  }
+}
+
+function showInviteToken(invitation) {
+  const result = document.querySelector('#invite-result');
+  document.querySelector('#invite-message').textContent =
+    `Invitation for ${invitation.email} (${invitation.role}) created. Share this one-time token:`;
+  document.querySelector('#invite-token').textContent = invitation.token;
+  result.hidden = false;
+}
+
+document.querySelector('#invite-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const submit = formElement.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  document.querySelector('#team-error').textContent = '';
+  try {
+    const invitation = await api('/api/saas/invitations', { method: 'POST', body: JSON.stringify({
+      email: form.get('email'), role: form.get('role'),
+    }) });
+    showInviteToken(invitation);
+    formElement.reset();
+    await loadTeam();
+  } catch (error) { document.querySelector('#team-error').textContent = error.message; }
+  finally { submit.disabled = false; }
+});
+
+document.querySelector('#copy-token').addEventListener('click', async () => {
+  const token = document.querySelector('#invite-token').textContent;
+  try {
+    await navigator.clipboard.writeText(token);
+    document.querySelector('#copy-token').textContent = 'Copied';
+    setTimeout(() => { document.querySelector('#copy-token').textContent = 'Copy'; }, 1500);
+  } catch { /* clipboard unavailable; token remains visible to copy manually */ }
+});
+
+document.querySelector('#refresh-team').addEventListener('click', loadTeam);
 
 function showBillingReturn() {
   const params = new URLSearchParams(location.search);
@@ -371,4 +484,5 @@ document.querySelector('#agent-form').addEventListener('submit', async (event) =
 document.querySelector('#refresh').addEventListener('click', loadItems);
 document.querySelector('#refresh-runs').addEventListener('click', loadRuns);
 showBillingReturn();
-Promise.all([loadItems(), loadRuns(), loadOrganization()]);
+await Promise.all([loadItems(), loadRuns(), loadOrganization()]);
+await loadTeam();

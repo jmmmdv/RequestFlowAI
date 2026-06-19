@@ -31,6 +31,21 @@ test('renders quota meters and offers an upgrade on the free plan', async ({ pag
   await expect(page.getByRole('button', { name: 'Upgrade to Pro' })).toBeVisible();
 });
 
+test('lists members and creates a teammate invitation', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.locator('#team-panel')).toBeVisible();
+  await expect(page.locator('#members-list')).toContainText('ADMIN');
+
+  await page.getByLabel('Email').fill('teammate@example.com');
+  await page.getByLabel('Role').selectOption('MEMBER');
+  await page.getByRole('button', { name: 'Send invite' }).click();
+
+  await expect(page.locator('#invite-result')).toBeVisible();
+  await expect(page.locator('#invite-token')).not.toBeEmpty();
+  await expect(page.locator('#invitations-list')).toContainText('teammate@example.com');
+});
+
 test('agent decomposes a goal into three work items', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Goal').fill('Deploy the REST API to AWS');

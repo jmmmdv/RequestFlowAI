@@ -32,6 +32,23 @@ main { display:grid; gap:24px; padding-bottom:64px; }
 .plan-note[hidden] { display:none; }
 .upgrade-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 .upgrade[hidden] { display:none; }
+#team-panel[hidden] { display:none; }
+.invite-result { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:14px 0 4px; padding:12px 14px; border:1px solid #2d6c60; border-radius:12px; background:#0a1424; font-size:.82rem; }
+.invite-result[hidden] { display:none; }
+.invite-result code { color:var(--accent); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; word-break:break-all; }
+.invite-result button { min-height:34px; }
+.team-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; margin-top:16px; }
+.team-subhead { font-size:.8rem; letter-spacing:.06em; color:var(--muted); text-transform:uppercase; margin:0 0 10px; }
+.team-list { display:grid; gap:8px; color:var(--muted); font-size:.82rem; }
+.team-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; background:#0a1424; border:1px solid var(--line); border-radius:12px; }
+.team-row strong { display:block; color:var(--ink); font-size:.9rem; }
+.team-row span { font-size:.72rem; }
+.role-badge,.invitation-status { padding:5px 9px; border-radius:999px; font-size:.66rem; font-weight:900; letter-spacing:.08em; border:1px solid var(--line); }
+.role-badge { color:var(--accent); border-color:#2d6c60; }
+.role-badge[data-role="ADMIN"] { color:var(--purple); border-color:#6655a2; }
+.invitation-status[data-status="pending"] { color:#fbbf24; border-color:#b45309; }
+.invitation-status[data-status="accepted"] { color:var(--accent); border-color:#2d6c60; }
+.invitation-status[data-status="expired"] { color:#fb7185; border-color:#7f1d2b; }
 .section-heading,.form-row,.work-form,.card-top { display:flex; gap:12px; align-items:end; justify-content:space-between; }
 .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
 .stats div { display:grid; padding:14px; background:#0a1424; border:1px solid var(--line); border-radius:12px; }
