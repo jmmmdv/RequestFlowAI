@@ -1,10 +1,245 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: App Runner service for the Automation Mission Control container
+Description: Production App Runner, private PostgreSQL, secrets, dashboards, and alarms
+
 Parameters:
   ImageRepository:
     Type: String
-    Description: ECR image URI including tag (account.dkr.ecr.region.amazonaws.com/repo:tag)
+    Description: Immutable ECR image URI including tag or digest
+  OAuth2IssuerUri:
+    Type: String
+    Description: HTTPS OIDC issuer used to validate production JWTs
+    AllowedPattern: '^https://.+'
+  DatabaseName:
+    Type: String
+    Default: mission_control
+    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9_]{0,62}$'
+  DatabaseUsername:
+    Type: String
+    Default: mission_admin
+    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9_]{0,62}$'
+  DatabaseInstanceClass:
+    Type: String
+    Default: db.t4g.micro
+  DatabaseBackupRetentionDays:
+    Type: Number
+    Default: 7
+    MinValue: 1
+    MaxValue: 35
+  DatabaseMultiAz:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+  DatabaseDeletionProtection:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+  OtlpTracesEndpoint:
+    Type: String
+    Default: ''
+    Description: Optional HTTPS OTLP HTTP/protobuf endpoint ending in /v1/traces
+  AlarmEmail:
+    Type: String
+    Default: ''
+    Description: Optional email address for alarm notifications
+
+Conditions:
+  HasOtlpEndpoint: !Not [!Equals [!Ref OtlpTracesEndpoint, '']]
+  HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, '']]
+
 Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.42.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags: [{ Key: Name, Value: mission-control-vpc }]
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref Vpc
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.42.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags: [{ Key: Name, Value: mission-public-a }]
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.42.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags: [{ Key: Name, Value: mission-public-b }]
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.42.10.0/24
+      MapPublicIpOnLaunch: false
+      Tags: [{ Key: Name, Value: mission-private-a }]
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.42.11.0/24
+      MapPublicIpOnLaunch: false
+      Tags: [{ Key: Name, Value: mission-private-b }]
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicSubnetARouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref PublicSubnetA, RouteTableId: !Ref PublicRouteTable }
+  PublicSubnetBRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref PublicSubnetB, RouteTableId: !Ref PublicRouteTable }
+
+  NatElasticIp:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties: { Domain: vpc }
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatElasticIp.AllocationId
+      SubnetId: !Ref PublicSubnetA
+      Tags: [{ Key: Name, Value: mission-control-nat }]
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: { VpcId: !Ref Vpc }
+  PrivateDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+  PrivateSubnetARouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref PrivateSubnetA, RouteTableId: !Ref PrivateRouteTable }
+  PrivateSubnetBRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref PrivateSubnetB, RouteTableId: !Ref PrivateRouteTable }
+
+  AppRunnerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: App Runner outbound access
+      VpcId: !Ref Vpc
+      SecurityGroupEgress: []
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PostgreSQL access from App Runner only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress: []
+      SecurityGroupEgress: []
+  AppRunnerToDatabaseEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref AppRunnerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      DestinationSecurityGroupId: !Ref DatabaseSecurityGroup
+  AppRunnerHttpsEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref AppRunnerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: 0.0.0.0/0
+  AppRunnerDnsUdpEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref AppRunnerSecurityGroup
+      IpProtocol: udp
+      FromPort: 53
+      ToPort: 53
+      CidrIp: 0.0.0.0/0
+  AppRunnerDnsTcpEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref AppRunnerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 53
+      ToPort: 53
+      CidrIp: 0.0.0.0/0
+  DatabaseIngressFromAppRunner:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DatabaseSecurityGroup
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref AppRunnerSecurityGroup
+
+  VpcConnector:
+    Type: AWS::AppRunner::VpcConnector
+    Properties:
+      VpcConnectorName: mission-control-private
+      Subnets: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+      SecurityGroups: [!Ref AppRunnerSecurityGroup]
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private two-AZ PostgreSQL subnets
+      SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+  DatabasePasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Automation Mission Control PostgreSQL password
+      GenerateSecretString:
+        PasswordLength: 32
+        ExcludePunctuation: true
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: postgres
+      DBInstanceClass: !Ref DatabaseInstanceClass
+      AllocatedStorage: '20'
+      MaxAllocatedStorage: 100
+      StorageType: gp3
+      StorageEncrypted: true
+      DBName: !Ref DatabaseName
+      MasterUsername: !Ref DatabaseUsername
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DatabasePasswordSecret}:SecretString}}'
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      VPCSecurityGroups: [!Ref DatabaseSecurityGroup]
+      PubliclyAccessible: false
+      MultiAZ: !Ref DatabaseMultiAz
+      BackupRetentionPeriod: !Ref DatabaseBackupRetentionDays
+      CopyTagsToSnapshot: true
+      DeletionProtection: !Ref DatabaseDeletionProtection
+      EnableCloudwatchLogsExports: [postgresql, upgrade]
+      AutoMinorVersionUpgrade: true
+      PreferredBackupWindow: 03:00-04:00
+      PreferredMaintenanceWindow: sun:04:00-sun:05:00
+      Tags: [{ Key: Service, Value: automation-mission-control }]
+
   AppRunnerEcrRole:
     Type: AWS::IAM::Role
     Properties:
@@ -16,10 +251,37 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+  AppRunnerInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: tasks.apprunner.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReadDatabasePassword
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref DatabasePasswordSecret
+
   Service:
     Type: AWS::AppRunner::Service
+    DependsOn: Database
     Properties:
       ServiceName: automation-mission-control
+      InstanceConfiguration:
+        Cpu: 1 vCPU
+        Memory: 2 GB
+        InstanceRoleArn: !GetAtt AppRunnerInstanceRole.Arn
+      NetworkConfiguration:
+        EgressConfiguration:
+          EgressType: VPC
+          VpcConnectorArn: !GetAtt VpcConnector.VpcConnectorArn
       SourceConfiguration:
         AutoDeploymentsEnabled: false
         AuthenticationConfiguration:
@@ -29,10 +291,112 @@ Resources:
           ImageRepositoryType: ECR
           ImageConfiguration:
             Port: '8080'
+            RuntimeEnvironmentVariables:
+              - { Name: SPRING_PROFILES_ACTIVE, Value: prod }
+              - { Name: DATABASE_URL, Value: !Sub 'jdbc:postgresql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${DatabaseName}' }
+              - { Name: DATABASE_USERNAME, Value: !Ref DatabaseUsername }
+              - { Name: OAUTH2_ISSUER_URI, Value: !Ref OAuth2IssuerUri }
+              - { Name: TRACING_ENABLED, Value: !If [HasOtlpEndpoint, 'true', 'false'] }
+              - { Name: TRACING_SAMPLE_RATE, Value: '0.10' }
+              - !If
+                - HasOtlpEndpoint
+                - { Name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, Value: !Ref OtlpTracesEndpoint }
+                - !Ref AWS::NoValue
+            RuntimeEnvironmentSecrets:
+              - { Name: DATABASE_PASSWORD, Value: !Ref DatabasePasswordSecret }
       HealthCheckConfiguration:
-        Path: /actuator/health
+        Path: /actuator/health/readiness
         Protocol: HTTP
+        HealthyThreshold: 1
+        UnhealthyThreshold: 5
+        Interval: 10
+        Timeout: 5
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties: { TopicName: mission-control-alarms }
+  AlarmEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlarmEmail
+    Properties:
+      Protocol: email
+      Endpoint: !Ref AlarmEmail
+      TopicArn: !Ref AlarmTopic
+  HighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Five or more server errors in five minutes
+      Namespace: AWS/AppRunner
+      MetricName: 5xxStatusResponses
+      Dimensions:
+        - { Name: ServiceName, Value: automation-mission-control }
+        - { Name: ServiceID, Value: !GetAtt Service.ServiceId }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+  HighLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Sustained average latency above one second
+      Namespace: AWS/AppRunner
+      MetricName: RequestLatency
+      Dimensions:
+        - { Name: ServiceName, Value: automation-mission-control }
+        - { Name: ServiceID, Value: !GetAtt Service.ServiceId }
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 3
+      Threshold: 1000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+  LowDatabaseStorageAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: PostgreSQL free storage below two GiB
+      Namespace: AWS/RDS
+      MetricName: FreeStorageSpace
+      Dimensions: [{ Name: DBInstanceIdentifier, Value: !Ref Database }]
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 2147483648
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopic]
+
+  OperationsDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: automation-mission-control
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {"type":"metric","x":0,"y":0,"width":12,"height":6,"properties":{"title":"Requests and errors","region":"${AWS::Region}","metrics":[["AWS/AppRunner","Requests","ServiceName","automation-mission-control","ServiceID","${Service.ServiceId}",{"stat":"Sum"}],[".","5xxStatusResponses",".",".",".",".",{"stat":"Sum","color":"#d62728"}]],"period":300}},
+            {"type":"metric","x":12,"y":0,"width":12,"height":6,"properties":{"title":"Request latency","region":"${AWS::Region}","metrics":[["AWS/AppRunner","RequestLatency","ServiceName","automation-mission-control","ServiceID","${Service.ServiceId}",{"stat":"Average"}]],"period":60}},
+            {"type":"metric","x":0,"y":6,"width":12,"height":6,"properties":{"title":"App CPU and memory","region":"${AWS::Region}","metrics":[["AWS/AppRunner","CPUUtilization","ServiceName","automation-mission-control","ServiceID","${Service.ServiceId}"],[".","MemoryUtilization",".",".",".","."]],"period":60}},
+            {"type":"metric","x":12,"y":6,"width":12,"height":6,"properties":{"title":"PostgreSQL health","region":"${AWS::Region}","metrics":[["AWS/RDS","CPUUtilization","DBInstanceIdentifier","${Database}"],[".","DatabaseConnections",".","."],[".","FreeStorageSpace",".",".",{"yAxis":"right"}]],"period":300}}
+          ]
+        }
+
 Outputs:
   ServiceUrl:
     Description: Public App Runner hostname
     Value: !GetAtt Service.ServiceUrl
+  DatabaseEndpoint:
+    Description: Private PostgreSQL endpoint
+    Value: !GetAtt Database.Endpoint.Address
+  DatabasePasswordSecretArn:
+    Description: Secrets Manager ARN; retrieve only through authorized automation
+    Value: !Ref DatabasePasswordSecret
+  AlarmTopicArn:
+    Value: !Ref AlarmTopic
+  DashboardName:
+    Value: !Ref OperationsDashboard

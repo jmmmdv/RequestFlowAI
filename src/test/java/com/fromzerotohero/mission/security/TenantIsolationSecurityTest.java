@@ -57,6 +57,14 @@ class TenantIsolationSecurityTest {
     }
 
     @Test
+    void protectsOperationalMetricsButKeepsHealthPublic() throws Exception {
+        mvc.perform(get("/actuator/health")).andExpect(status().isOk());
+        mvc.perform(get("/actuator/metrics")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/actuator/metrics").with(jwtFor(TENANT_A, "ADMIN")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void returnsOnlyRowsOwnedByTheJwtTenant() throws Exception {
         List<WorkItem> saved = workItems.saveAll(List.of(
                 new WorkItem("Tenant A item", "Visible", Priority.HIGH, WorkStatus.READY, TENANT_A),

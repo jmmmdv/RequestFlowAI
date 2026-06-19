@@ -20,6 +20,11 @@ jobs:
         with:
           node-version: "22"
           cache: npm
+      - name: Validate infrastructure as code
+        run: |
+          pip install --disable-pip-version-check cfn-lint
+          cfn-lint infrastructure/aws/template.yaml
+          docker compose --profile observability config --quiet
       - run: ./mvnw --batch-mode clean verify
       - run: npm ci
       - run: npm audit --audit-level=high

@@ -58,6 +58,17 @@ npx playwright install chromium
 npm test
 ```
 
+Run the local observability lab:
+
+```bash
+docker compose --profile observability up -d
+TRACING_ENABLED=true ./mvnw spring-boot:run
+```
+
+Open Grafana at [http://localhost:3000](http://localhost:3000), Prometheus at
+[http://localhost:9090](http://localhost:9090), then exercise the dashboard to generate metrics and
+traces. Grafana is pre-provisioned with Prometheus, Tempo, and the Mission Control dashboard.
+
 Run only the API–database comparison samples:
 
 ```bash
@@ -90,6 +101,8 @@ reviewed migration. Production credentials belong in `DATABASE_USERNAME` and
 | Agent behavior cannot silently regress | `AgentEvaluationTest` gates 27 golden and adversarial cases in CI |
 | Main cannot silently lose coverage | JaCoCo fails `verify` below 80% line coverage |
 | User journeys work in a browser | Playwright covers dashboard, agent, status, and REST CRUD workflows |
+| Production data stays private and recoverable | CloudFormation provisions private encrypted RDS, Secrets Manager, backups, and snapshot retention |
+| Operators can detect and diagnose failure | OTLP tracing, provisioned Grafana, CloudWatch dashboard, SNS alarms, SLOs, and runbooks |
 
 ## Five-minute reviewer walkthrough
 
@@ -97,9 +110,10 @@ reviewed migration. Production credentials belong in `DATABASE_USERNAME` and
 2. Use Swagger UI to create and update a work item, then inspect its HAL links.
 3. Run an urgent production goal, show that zero tools run, then approve it from the audit trail.
 4. Open `TenantIsolationSecurityTest` to explain why tenant identity never comes from input data.
-5. Run `./mvnw clean verify` and show the PostgreSQL test and JaCoCo report under
+5. Open the provisioned Grafana dashboard and follow one request from metrics to a Tempo trace.
+6. Run `./mvnw clean verify` and show the PostgreSQL test and JaCoCo report under
    `target/site/jacoco/index.html`.
-6. Run `npm test` and inspect the Playwright HTML report.
+7. Run `npm test` and inspect the Playwright HTML report.
 
 ## What you will learn
 
@@ -179,9 +193,10 @@ an LLM belongs while keeping deterministic tests and safety controls.
    - [x] OAuth2 JWT authentication with role-based authorization
    - [x] Tenant-scoped persistence with tested cross-tenant isolation
    - [x] Attributed agent audit records and correlation IDs
-   - [ ] Private RDS, VPC connectivity, and Secrets Manager integration in AWS
-   - [ ] Distributed tracing, service dashboards, and actionable alerts
-   - [ ] SLOs, incident runbooks, backup policy, and tested restore drill
+   - [x] Private RDS, VPC connectivity, and Secrets Manager integration in AWS
+   - [x] OpenTelemetry tracing, local Grafana, CloudWatch dashboard, and actionable alarms
+   - [x] SLOs, incident runbook, backup policy, and repeatable restore-drill procedure
+   - [ ] Execute and record the restore drill in an AWS sandbox account
    - [ ] Browser authorization-code flow with PKCE for the production UI
 
 Each milestone is done only when code, tests, documentation, and demo evidence agree.
