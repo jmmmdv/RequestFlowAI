@@ -10,3 +10,5 @@ test-results/
 .vercel
 .requestflow-vercel-env.txt
 post-deploy-setup.log
+scripts/drills/cognito-trigger/package.json
+scripts/drills/cognito-trigger/package-lock.json
