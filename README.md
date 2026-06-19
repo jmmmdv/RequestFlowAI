@@ -12,6 +12,10 @@ bounded planning agent turns goals into attributable, auditable work.
 
 ![Automation Mission Control dashboard](docs/assets/mission-control-dashboard.jpg)
 
+> **Reviewing this for a role?** Start with the [case study](docs/portfolio/CASE-STUDY.md) for the
+> problem, key engineering decisions, and evidence, then the [demo script](docs/portfolio/DEMO-SCRIPT.md)
+> for a five-minute walkthrough.
+
 ## Why this project exists
 
 Most training repositories are disconnected examples. This one demonstrates how production
