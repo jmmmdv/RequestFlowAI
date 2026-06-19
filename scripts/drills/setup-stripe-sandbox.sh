@@ -18,6 +18,7 @@ Prerequisites (Stripe Dashboard → test mode):
 Usage:
   export STRIPE_SECRET_KEY=sk_test_...
   export STRIPE_WEBHOOK_SECRET=whsec_...
+  # Optional — created automatically when omitted:
   export STRIPE_PRO_PRICE_ID=price_...
   export STRIPE_BUSINESS_PRICE_ID=price_...
   ./scripts/drills/setup-stripe-sandbox.sh
@@ -29,7 +30,11 @@ Optional:
 EOF
 }
 
-for var in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_PRO_PRICE_ID STRIPE_BUSINESS_PRICE_ID; do
+FRONTEND_URL="${FRONTEND_URL:-https://from-zero-to-hero-azure.vercel.app}"
+COGNITO_PREFIX="${COGNITO_PREFIX:-jeyhun-requestflow-2026}"
+ALARM_EMAIL="${ALARM_EMAIL:-j.mmmdv@gmail.com}"
+
+for var in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET; do
   if [[ -z "${!var:-}" ]]; then
     usage
     echo "Missing $var" >&2
@@ -37,9 +42,36 @@ for var in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_PRO_PRICE_ID STRIPE_BU
   fi
 done
 
-FRONTEND_URL="${FRONTEND_URL:-https://from-zero-to-hero-azure.vercel.app}"
-COGNITO_PREFIX="${COGNITO_PREFIX:-jeyhun-requestflow-2026}"
-ALARM_EMAIL="${ALARM_EMAIL:-jmmmdv@gmail.com}"
+if [[ -z "${STRIPE_PRO_PRICE_ID:-}" || -z "${STRIPE_BUSINESS_PRICE_ID:-}" ]]; then
+  if [[ -n "${STRIPE_SECRET_KEY:-}" ]]; then
+    echo "==> Creating Stripe test products and prices"
+    PRO_PRODUCT="$(curl -sS https://api.stripe.com/v1/products \
+      -u "$STRIPE_SECRET_KEY:" \
+      -d name="RequestFlow AI Pro" \
+      -d description="Pro plan for RequestFlow AI pilot")"
+    PRO_PRODUCT_ID="$(echo "$PRO_PRODUCT" | jq -r .id)"
+    BUSINESS_PRODUCT="$(curl -sS https://api.stripe.com/v1/products \
+      -u "$STRIPE_SECRET_KEY:" \
+      -d name="RequestFlow AI Business" \
+      -d description="Business plan for RequestFlow AI pilot")"
+    BUSINESS_PRODUCT_ID="$(echo "$BUSINESS_PRODUCT" | jq -r .id)"
+    STRIPE_PRO_PRICE_ID="$(curl -sS https://api.stripe.com/v1/prices \
+      -u "$STRIPE_SECRET_KEY:" \
+      -d "product=$PRO_PRODUCT_ID" \
+      -d unit_amount=2900 \
+      -d currency=usd \
+      -d "recurring[interval]=month" | jq -r .id)"
+    STRIPE_BUSINESS_PRICE_ID="$(curl -sS https://api.stripe.com/v1/prices \
+      -u "$STRIPE_SECRET_KEY:" \
+      -d "product=$BUSINESS_PRODUCT_ID" \
+      -d unit_amount=7900 \
+      -d currency=usd \
+      -d "recurring[interval]=month" | jq -r .id)"
+    export STRIPE_PRO_PRICE_ID STRIPE_BUSINESS_PRICE_ID
+    echo "    PRO price:      $STRIPE_PRO_PRICE_ID"
+    echo "    BUSINESS price: $STRIPE_BUSINESS_PRICE_ID"
+  fi
+fi
 
 SERVICE_URL="$(aws cloudformation describe-stacks --stack-name "$STACK" --region "$REGION" \
   --query "Stacks[0].Outputs[?OutputKey=='ServiceUrl'].OutputValue" --output text)"

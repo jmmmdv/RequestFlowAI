@@ -6,7 +6,7 @@ STACK_NAME="${STACK_NAME:-automation-mission-control}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 FRONTEND_URL="${FRONTEND_URL:-https://from-zero-to-hero-azure.vercel.app}"
 COGNITO_PREFIX="${COGNITO_PREFIX:-jeyhun-requestflow-2026}"
-ALARM_EMAIL="${ALARM_EMAIL:-jmmmdv@gmail.com}"
+ALARM_EMAIL="${ALARM_EMAIL:-j.mmmdv@gmail.com}"
 
 echo "==> Waiting for CloudFormation stack: $STACK_NAME"
 for _ in $(seq 1 60); do
