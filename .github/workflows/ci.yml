@@ -33,5 +33,6 @@ jobs:
           name: verification-evidence
           path: |
             target/surefire-reports
+            target/site/jacoco
             playwright-report
             test-results

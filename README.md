@@ -1,22 +1,45 @@
 # Automation Mission Control
 
-A production-shaped learning project that connects software development, test automation,
-DevOps, cloud, RPA, and agentic AI. Instead of isolated “hello world” samples, every topic
-contributes to one application: a mission board where people and an automation agent plan work.
+A production-shaped, multi-tenant SaaS portfolio project connecting REST engineering, browser
+automation, security, DevOps, cloud, RPA, and agentic AI. People manage a delivery board while a
+bounded planning agent turns goals into attributable, auditable work.
 
 ![Java 21](https://img.shields.io/badge/Java-21-ED8B00)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F)
 ![Playwright](https://img.shields.io/badge/Playwright-E2E-2EAD33)
+[![CI](https://github.com/jmmmdv/FromZeroToHero/actions/workflows/ci.yml/badge.svg)](https://github.com/jmmmdv/FromZeroToHero/actions/workflows/ci.yml)
+![Coverage gate](https://img.shields.io/badge/coverage_gate-80%25-brightgreen)
+
+![Automation Mission Control dashboard](docs/assets/mission-control-dashboard.jpg)
+
+## Why this project exists
+
+Most training repositories are disconnected examples. This one demonstrates how production
+concerns interact inside a coherent product:
+
+- signed JWT identity becomes a trusted tenant boundary at the repository layer;
+- agent actions create durable audit evidence tied to user, tenant, and correlation ID;
+- the same Flyway migrations run against fast local H2 and real PostgreSQL in CI;
+- REST, database-consistency, security, contract, and browser tests form one delivery gate;
+- Jenkins, GitHub Actions, Docker, CloudFormation, and operational docs show the path to release.
+
+The rule-based agent is intentionally deterministic. It makes orchestration, safety boundaries,
+and evaluation visible before an external LLM is introduced.
 
 ## Start here
 
-Requirements: Java 21+, Node.js 20+ (24 recommended), and Git.
+Requirements: Java 21+, Node.js 20+ (24 recommended), and Git. Docker is optional locally but
+enables the real PostgreSQL integration test.
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
 Open [http://localhost:8080](http://localhost:8080). In another terminal:
+
+- Dashboard: [http://localhost:8080](http://localhost:8080)
+- Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- OpenAPI JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
 
 ```bash
 curl http://localhost:8080/api/work-items
@@ -44,12 +67,36 @@ Run against a production-shaped PostgreSQL database:
 
 ```bash
 docker compose up -d postgres
-SPRING_PROFILES_ACTIVE=prod ./mvnw spring-boot:run
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/mission_control \
+SPRING_DATASOURCE_USERNAME=mission SPRING_DATASOURCE_PASSWORD=mission \
+./mvnw spring-boot:run
 ```
 
 Flyway owns the schema in every environment, so H2, CI, and PostgreSQL start from the same
 reviewed migration. Production credentials belong in `DATABASE_USERNAME` and
 `DATABASE_PASSWORD`, never in source control.
+
+## Engineering evidence
+
+| Claim | Evidence in the repository |
+|---|---|
+| Tenant data cannot cross organization boundaries | `TenantIsolationSecurityTest` proves list and direct-ID isolation |
+| API responses agree with persisted rows | `ApiDatabaseConsistencyTest` compares HTTP JSON with raw SQL |
+| Migrations work on PostgreSQL | `PostgreSqlApiIntegrationTest` runs Flyway and API persistence in Testcontainers |
+| API behavior is discoverable | `/swagger-ui.html`, `/v3/api-docs`, and `OpenApiDocumentationTest` |
+| Agent activity is attributable | `agent_run` stores tenant, user, correlation ID, outcome, and timestamp |
+| Main cannot silently lose coverage | JaCoCo fails `verify` below 80% line coverage |
+| User journeys work in a browser | Playwright covers dashboard, agent, status, and REST CRUD workflows |
+
+## Five-minute reviewer walkthrough
+
+1. Start the app and open the dashboard screenshot or live UI.
+2. Use Swagger UI to create and update a work item, then inspect its HAL links.
+3. Run an agent goal and show the returned `runId` plus `/api/agent/runs` audit record.
+4. Open `TenantIsolationSecurityTest` to explain why tenant identity never comes from input data.
+5. Run `./mvnw clean verify` and show the PostgreSQL test and JaCoCo report under
+   `target/site/jacoco/index.html`.
+6. Run `npm test` and inspect the Playwright HTML report.
 
 ## What you will learn
 
