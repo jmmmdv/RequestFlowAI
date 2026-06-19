@@ -8,4 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface WorkItemRepository extends JpaRepository<WorkItem, Long> {
     List<WorkItem> findAllByTenantIdOrderByUpdatedAtDesc(UUID tenantId);
     Optional<WorkItem> findByIdAndTenantId(Long id, UUID tenantId);
+    long countByTenantId(UUID tenantId);
 }

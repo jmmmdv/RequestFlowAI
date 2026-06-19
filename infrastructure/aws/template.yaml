@@ -5,10 +5,15 @@ Parameters:
   ImageRepository:
     Type: String
     Description: Immutable ECR image URI including tag or digest
-  OAuth2IssuerUri:
+  FrontendUrl:
     Type: String
-    Description: HTTPS OIDC issuer used to validate production JWTs
+    Default: https://from-zero-to-hero-azure.vercel.app
+    Description: HTTPS browser origin and Cognito callback URL
     AllowedPattern: '^https://.+'
+  CognitoDomainPrefix:
+    Type: String
+    Description: Globally unique Cognito managed-login domain prefix
+    AllowedPattern: '^[a-z0-9-]{3,63}$'
   DatabaseName:
     Type: String
     Default: mission_control
@@ -41,12 +46,167 @@ Parameters:
     Type: String
     Default: ''
     Description: Optional email address for alarm notifications
+  StripeSecretKeyArn:
+    Type: String
+    Default: ''
+    Description: Optional Secrets Manager ARN containing the Stripe test/live secret key
+  StripeWebhookSecretArn:
+    Type: String
+    Default: ''
+    Description: Optional Secrets Manager ARN containing the Stripe webhook signing secret
+  StripeProPriceId:
+    Type: String
+    Default: ''
+  StripeBusinessPriceId:
+    Type: String
+    Default: ''
 
 Conditions:
   HasOtlpEndpoint: !Not [!Equals [!Ref OtlpTracesEndpoint, '']]
   HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, '']]
+  HasStripeSecrets: !And
+    - !Not [!Equals [!Ref StripeSecretKeyArn, '']]
+    - !Not [!Equals [!Ref StripeWebhookSecretArn, '']]
 
 Resources:
+  CognitoTriggerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: AssignInitialTenantAdmin
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: cognito-idp:AdminAddUserToGroup
+                Resource: !Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*'
+
+  CognitoTriggerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Role: !GetAtt CognitoTriggerRole.Arn
+      Timeout: 10
+      Code:
+        ZipFile: |
+          const crypto = require('crypto');
+          const { CognitoIdentityProviderClient, AdminAddUserToGroupCommand } = require('@aws-sdk/client-cognito-identity-provider');
+          const client = new CognitoIdentityProviderClient({});
+          exports.handler = async (event) => {
+            if (event.triggerSource.startsWith('PreSignUp_')) {
+              event.request.userAttributes['custom:tenant_id'] = crypto.randomUUID();
+              event.request.userAttributes['custom:organization_name'] ||= 'My Organization';
+            }
+            if (event.triggerSource === 'PostConfirmation_ConfirmSignUp') {
+              await client.send(new AdminAddUserToGroupCommand({
+                UserPoolId: event.userPoolId, Username: event.userName, GroupName: 'ADMIN'
+              }));
+            }
+            if (event.triggerSource.startsWith('TokenGeneration_')) {
+              event.response.claimsAndScopeOverrideDetails = {
+                accessTokenGeneration: { claimsToAddOrOverride: {
+                  tenant_id: event.request.userAttributes['custom:tenant_id'],
+                  organization_name: event.request.userAttributes['custom:organization_name'] || 'My Organization',
+                  email: event.request.userAttributes.email
+                }},
+                idTokenGeneration: { claimsToAddOrOverride: {
+                  tenant_id: event.request.userAttributes['custom:tenant_id'],
+                  organization_name: event.request.userAttributes['custom:organization_name'] || 'My Organization'
+                }}
+              };
+            }
+            return event;
+          };
+
+  CognitoInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref CognitoTriggerFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DependsOn: CognitoInvokePermission
+    Properties:
+      UserPoolName: automation-mission-control
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      DeletionProtection: ACTIVE
+      LambdaConfig:
+        PreSignUp: !GetAtt CognitoTriggerFunction.Arn
+        PostConfirmation: !GetAtt CognitoTriggerFunction.Arn
+        PreTokenGenerationConfig:
+          LambdaArn: !GetAtt CognitoTriggerFunction.Arn
+          LambdaVersion: V2_0
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: tenant_id
+          AttributeDataType: String
+          Mutable: true
+          StringAttributeConstraints: { MinLength: '36', MaxLength: '36' }
+        - Name: organization_name
+          AttributeDataType: String
+          Mutable: true
+          StringAttributeConstraints: { MinLength: '2', MaxLength: '120' }
+
+  CognitoAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties: { GroupName: ADMIN, Precedence: 1, UserPoolId: !Ref UserPool }
+  CognitoMemberGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties: { GroupName: MEMBER, Precedence: 2, UserPoolId: !Ref UserPool }
+  CognitoViewerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties: { GroupName: VIEWER, Precedence: 3, UserPoolId: !Ref UserPool }
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: [CognitoAdminGroup, CognitoMemberGroup, CognitoViewerGroup]
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: mission-control-browser
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      CallbackURLs: [!Ref FrontendUrl]
+      LogoutURLs: [!Ref FrontendUrl]
+      SupportedIdentityProviders: [COGNITO]
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits: { AccessToken: hours, IdToken: hours, RefreshToken: days }
+      ReadAttributes: [email, custom:tenant_id, custom:organization_name]
+      WriteAttributes: [email, custom:organization_name]
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref CognitoDomainPrefix
+      UserPoolId: !Ref UserPool
+
   Vpc:
     Type: AWS::EC2::VPC
     Properties:
@@ -261,13 +421,16 @@ Resources:
             Principal: { Service: tasks.apprunner.amazonaws.com }
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: ReadDatabasePassword
+        - PolicyName: ReadRuntimeSecrets
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
-                Resource: !Ref DatabasePasswordSecret
+                Resource:
+                  - !Ref DatabasePasswordSecret
+                  - !If [HasStripeSecrets, !Ref StripeSecretKeyArn, !Ref AWS::NoValue]
+                  - !If [HasStripeSecrets, !Ref StripeWebhookSecretArn, !Ref AWS::NoValue]
 
   Service:
     Type: AWS::AppRunner::Service
@@ -294,7 +457,10 @@ Resources:
               - { Name: SPRING_PROFILES_ACTIVE, Value: prod }
               - { Name: DATABASE_URL, Value: !Sub 'jdbc:postgresql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${DatabaseName}' }
               - { Name: DATABASE_USERNAME, Value: !Ref DatabaseUsername }
-              - { Name: OAUTH2_ISSUER_URI, Value: !Ref OAuth2IssuerUri }
+              - { Name: OAUTH2_ISSUER_URI, Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}' }
+              - { Name: FRONTEND_URL, Value: !Ref FrontendUrl }
+              - { Name: STRIPE_PRO_PRICE_ID, Value: !Ref StripeProPriceId }
+              - { Name: STRIPE_BUSINESS_PRICE_ID, Value: !Ref StripeBusinessPriceId }
               - { Name: TRACING_ENABLED, Value: !If [HasOtlpEndpoint, 'true', 'false'] }
               - { Name: TRACING_SAMPLE_RATE, Value: '0.10' }
               - !If
@@ -303,6 +469,14 @@ Resources:
                 - !Ref AWS::NoValue
             RuntimeEnvironmentSecrets:
               - { Name: DATABASE_PASSWORD, Value: !Ref DatabasePasswordSecret }
+              - !If
+                - HasStripeSecrets
+                - { Name: STRIPE_SECRET_KEY, Value: !Ref StripeSecretKeyArn }
+                - !Ref AWS::NoValue
+              - !If
+                - HasStripeSecrets
+                - { Name: STRIPE_WEBHOOK_SECRET, Value: !Ref StripeWebhookSecretArn }
+                - !Ref AWS::NoValue
       HealthCheckConfiguration:
         Path: /actuator/health/readiness
         Protocol: HTTP
@@ -399,3 +573,9 @@ Outputs:
     Value: !Ref AlarmTopic
   DashboardName:
     Value: !Ref OperationsDashboard
+  CognitoIssuerUri:
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+  CognitoClientId:
+    Value: !Ref UserPoolClient
+  CognitoManagedLoginDomain:
+    Value: !Sub 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com'

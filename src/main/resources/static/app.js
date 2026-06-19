@@ -1,9 +1,24 @@
+import { apiBaseUrl, authenticationConfigured, getAccessToken, initializeAuth, login, logout } from './auth.js';
+
 const board = document.querySelector('#board');
 const errorBox = document.querySelector('#error');
 const runBoard = document.querySelector('#run-board');
 const runError = document.querySelector('#run-error');
-const demoMode = location.hostname.endsWith('.vercel.app') || new URLSearchParams(location.search).has('demo');
+const demoMode = new URLSearchParams(location.search).has('demo') ||
+  (location.hostname.endsWith('.vercel.app') && !authenticationConfigured());
 const demoStateKey = 'mission-control-demo-v1';
+const authState = await initializeAuth().catch((error) => ({ authenticated: false, configured: true, error }));
+const loginButton = document.querySelector('#login');
+const logoutButton = document.querySelector('#logout');
+
+if (authState.configured && !demoMode) {
+  loginButton.hidden = authState.authenticated;
+  logoutButton.hidden = !authState.authenticated;
+  document.querySelector('#account-status').textContent = authState.error
+    ? authState.error.message : authState.authenticated ? 'Authenticated with Cognito' : 'Sign in to use the production API';
+}
+loginButton.addEventListener('click', login);
+logoutButton.addEventListener('click', logout);
 
 const initialDemoState = {
   nextItemId: 4,
@@ -62,6 +77,15 @@ async function demoApi(path, options = {}) {
     return null;
   }
   if (path === '/api/agent/runs' && method === 'GET') return state.runs;
+  if (path === '/api/saas/organization' && method === 'GET') return {
+    id: 'demo', name: 'Portfolio Reviewers', slug: 'portfolio-reviewers', plan: 'PRO', status: 'ACTIVE',
+    currentUserRole: 'ADMIN', billingConfigured: false, subscriptionStatus: 'DEMO',
+    usage: { plan: 'PRO', workItemsUsed: state.workItems.length, workItemsLimit: 1000,
+      agentRunsUsed: state.runs.length, agentRunsLimit: 500 },
+  };
+  if (path === '/api/billing/checkout' && method === 'POST') {
+    throw new Error('Billing checkout is disabled in the browser-local portfolio demo.');
+  }
   if (path === '/api/agent/plan' && method === 'POST') {
     const request = JSON.parse(options.body);
     const highImpact = /deploy|production|delete|security|database/i.test(request.goal);
@@ -99,15 +123,41 @@ if (demoMode) document.querySelector('#demo-notice').hidden = false;
 async function api(path, options = {}) {
   if (demoMode) return demoApi(path, options);
   const { headers = {}, ...requestOptions } = options;
-  const response = await fetch(path, {
+  const token = getAccessToken();
+  const response = await fetch(`${apiBaseUrl()}${path}`, {
     ...requestOptions,
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
   });
   if (!response.ok) {
     const problem = await response.json().catch(() => ({}));
     throw new Error(problem.detail || `Request failed (${response.status})`);
   }
   return response.status === 204 ? null : response.json();
+}
+
+async function loadOrganization() {
+  if (authenticationConfigured() && !authState.authenticated && !demoMode) return;
+  try {
+    const organization = await api('/api/saas/organization');
+    document.querySelector('#organization-name').textContent = organization.name;
+    document.querySelector('#plan-badge').textContent = organization.plan;
+    document.querySelector('#usage-summary').textContent =
+      `${organization.usage.workItemsUsed}/${organization.usage.workItemsLimit} work items · ` +
+      `${organization.usage.agentRunsUsed}/${organization.usage.agentRunsLimit} agent runs this month`;
+  } catch (error) {
+    document.querySelector('#usage-summary').textContent = error.message;
+  }
+}
+
+for (const button of document.querySelectorAll('.upgrade')) {
+  button.addEventListener('click', async () => {
+    try {
+      const response = await api('/api/billing/checkout', { method: 'POST', body: JSON.stringify({
+        plan: button.dataset.plan, idempotencyKey: crypto.randomUUID(),
+      }) });
+      location.assign(response.checkoutUrl);
+    } catch (error) { document.querySelector('#usage-summary').textContent = error.message; }
+  });
 }
 
 function extractItems(document) {
@@ -164,7 +214,7 @@ async function approveRun(id, button) {
   try {
     const response = await api(`/api/agent/runs/${id}/approve`, { method: 'POST' });
     document.querySelector('#agent-result').textContent = `Approved: created ${response.createdWorkItemIds.length} work items.`;
-    await Promise.all([loadItems(), loadRuns()]);
+    await Promise.all([loadItems(), loadRuns(), loadOrganization()]);
   } catch (error) {
     runError.textContent = error.message;
     button.disabled = false;
@@ -201,10 +251,10 @@ async function changeStatus(id, control) {
     await api(`/api/work-items/${id}/status`, {
       method: 'PATCH', body: JSON.stringify({ status: control.value }),
     });
-    await loadItems();
+    await Promise.all([loadItems(), loadOrganization()]);
   } catch (error) {
     errorBox.textContent = error.message;
-    await loadItems();
+    await Promise.all([loadItems(), loadOrganization()]);
   } finally {
     control.disabled = false;
   }
@@ -213,7 +263,7 @@ async function changeStatus(id, control) {
 async function removeItem(id) {
   try {
     await api(`/api/work-items/${id}`, { method: 'DELETE' });
-    await loadItems();
+    await Promise.all([loadItems(), loadOrganization()]);
   } catch (error) { errorBox.textContent = error.message; }
 }
 
@@ -229,7 +279,7 @@ document.querySelector('#work-form').addEventListener('submit', async (event) =>
       priority: form.get('priority'), status: 'BACKLOG',
     }) });
     formElement.reset();
-    await loadItems();
+    await Promise.all([loadItems(), loadOrganization()]);
   } catch (error) { errorBox.textContent = error.message; }
   finally { submit.disabled = false; }
 });
@@ -258,11 +308,11 @@ document.querySelector('#agent-form').addEventListener('submit', async (event) =
       BLOCKED: 'Blocked by safety policy: no tools were called.',
     };
     result.textContent = `${response.classification}: ${messages[response.outcome]}`;
-    await Promise.all([loadItems(), loadRuns()]);
+    await Promise.all([loadItems(), loadRuns(), loadOrganization()]);
   } catch (error) { result.textContent = error.message; }
   finally { submit.disabled = false; }
 });
 
 document.querySelector('#refresh').addEventListener('click', loadItems);
 document.querySelector('#refresh-runs').addEventListener('click', loadRuns);
-Promise.all([loadItems(), loadRuns()]);
+Promise.all([loadItems(), loadRuns(), loadOrganization()]);

@@ -3,6 +3,8 @@
 body { margin:0; min-height:100vh; color:var(--ink); background:radial-gradient(circle at 15% 0%,#233154 0,transparent 32%),#08111f; font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
 header,main { width:min(1100px,calc(100% - 32px)); margin:auto; }
 header { padding:64px 0 32px; }
+.account-bar { display:flex; justify-content:flex-end; align-items:center; gap:12px; color:var(--muted); font-size:.8rem; }
+.account-bar button { min-height:36px; }
 .demo-notice { display:inline-flex; margin-top:18px; padding:10px 14px; color:#fef3c7; background:#78350f55; border:1px solid #b45309; border-radius:999px; font-size:.8rem; }
 .demo-notice[hidden] { display:none; }
 h1 { font-size:clamp(2.5rem,7vw,5rem); letter-spacing:-.055em; margin:.1em 0; max-width:850px; line-height:.95; }
@@ -11,6 +13,9 @@ h2,h3,p { margin-top:0; } header>p:last-child,.description { color:var(--muted);
 main { display:grid; gap:24px; padding-bottom:64px; }
 .panel { background:color-mix(in srgb,var(--panel) 90%,transparent); border:1px solid var(--line); border-radius:22px; padding:clamp(20px,4vw,36px); box-shadow:0 24px 80px #0005; }
 .agent-panel { border-color:#6655a2; background:linear-gradient(135deg,#201a3a,#111c2d 70%); }
+.saas-panel { border-color:#2d6c60; background:linear-gradient(135deg,#102b2c,#111c2d 70%); }
+.plan-badge { padding:7px 10px; border:1px solid #2d6c60; border-radius:999px; color:var(--accent); font-size:.72rem; font-weight:900; }
+.upgrade-actions { display:flex; gap:10px; flex-wrap:wrap; }
 .section-heading,.form-row,.work-form,.card-top { display:flex; gap:12px; align-items:end; justify-content:space-between; }
 .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
 .stats div { display:grid; padding:14px; background:#0a1424; border:1px solid var(--line); border-radius:12px; }

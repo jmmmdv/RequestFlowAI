@@ -11,6 +11,8 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import com.fromzerotohero.mission.agent.AgentApprovalException;
 import com.fromzerotohero.mission.agent.AgentRunNotFoundException;
 import com.fromzerotohero.mission.agent.InvalidIdempotencyKeyException;
+import com.fromzerotohero.mission.saas.QuotaExceededException;
+import com.fromzerotohero.mission.saas.SaasException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -60,6 +62,21 @@ public class ApiExceptionHandler {
     ProblemDetail invalidIdempotencyKey(InvalidIdempotencyKeyException exception) {
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
         detail.setTitle("Invalid idempotency key");
+        return detail;
+    }
+
+    @ExceptionHandler(QuotaExceededException.class)
+    ProblemDetail quotaExceeded(QuotaExceededException exception) {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
+        detail.setTitle("Plan quota exceeded");
+        detail.setType(URI.create("https://from-zero-to-hero.dev/problems/plan-quota-exceeded"));
+        return detail;
+    }
+
+    @ExceptionHandler(SaasException.class)
+    ProblemDetail saasFailure(SaasException exception) {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(exception.status(), exception.getMessage());
+        detail.setTitle("SaaS operation failed");
         return detail;
     }
 }

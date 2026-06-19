@@ -21,6 +21,7 @@ concerns interact inside a coherent product:
 - agent actions create durable audit evidence tied to user, tenant, and correlation ID;
 - the same Flyway migrations run against fast local H2 and real PostgreSQL in CI;
 - REST, database-consistency, security, contract, and browser tests form one delivery gate;
+- organizations, memberships, invitations, plan quotas, and Stripe subscription state form a real SaaS product layer;
 - Jenkins, GitHub Actions, Docker, CloudFormation, and operational docs show the path to release.
 
 The rule-based agent is intentionally deterministic. It makes orchestration, safety boundaries,
@@ -41,10 +42,10 @@ Open [http://localhost:8080](http://localhost:8080). In another terminal:
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - OpenAPI JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
 
-The Vercel deployment is an explicitly labeled, browser-local portfolio preview. It serves the
-same UI with disposable demo data so reviewers can explore it without credentials. The real Java
-API, PostgreSQL database, authentication, and observability stack deploy through AWS App Runner.
-`vercel.json` selects the Spring static-resource directory and prevents incorrect Next.js detection.
+The default Vercel deployment is an explicitly labeled, browser-local portfolio preview with
+disposable data. When its three public `MISSION_*` variables are configured, the same build becomes
+the production UI: Cognito Authorization Code + PKCE in the browser and bearer-token calls to the
+App Runner API. See [the SaaS launch guide](docs/saas/SAAS-LAUNCH.md).
 
 ```bash
 curl http://localhost:8080/api/work-items
@@ -108,6 +109,8 @@ reviewed migration. Production credentials belong in `DATABASE_USERNAME` and
 | User journeys work in a browser | Playwright covers dashboard, agent, status, and REST CRUD workflows |
 | Production data stays private and recoverable | CloudFormation provisions private encrypted RDS, Secrets Manager, backups, and snapshot retention |
 | Operators can detect and diagnose failure | OTLP tracing, provisioned Grafana, CloudWatch dashboard, SNS alarms, SLOs, and runbooks |
+| The product has a SaaS control plane | Organizations, memberships, invitations, plan quotas, Stripe Checkout, and signed webhooks have integration tests |
+| Browser credentials are never embedded | Cognito uses a public client, Authorization Code + PKCE, state validation, and deploy-time public configuration |
 
 ## Five-minute reviewer walkthrough
 
@@ -149,7 +152,9 @@ extended with validation, `201 Created` locations, Problem Details, service test
 
 ```mermaid
 flowchart LR
-  User["User / UiPath"] --> UI["JavaScript dashboard"]
+  User["User / UiPath"] --> UI["Vercel JavaScript dashboard"]
+  User --> Cognito["Amazon Cognito + PKCE"]
+  Cognito --> UI
   UI --> API["Spring REST + HATEOAS"]
   User --> API
   API --> Agent["Bounded agent orchestrator"]
@@ -157,6 +162,7 @@ flowchart LR
   Agent --> Tool["Work-item tool"]
   Tool --> DB[("H2 / PostgreSQL")]
   API --> DB
+  API --> Stripe["Stripe Checkout + webhooks"]
   PW["Playwright"] --> UI
   PW --> API
   Jenkins["Jenkins"] --> PW
@@ -180,6 +186,12 @@ an LLM belongs while keeping deterministic tests and safety controls.
 | `POST` | `/api/agent/plan` | Dry-run or execute an auditable three-step plan |
 | `POST` | `/api/agent/runs/{id}/approve` | Approve one pending high-impact plan; safe to retry |
 | `GET` | `/api/agent/runs` | Tenant-scoped agent audit history (production: admin only) |
+| `GET` | `/api/saas/organization` | Organization, role, subscription, and quota usage |
+| `PATCH` | `/api/saas/organization` | Rename an organization (admin only) |
+| `GET/POST` | `/api/saas/invitations` | List or issue expiring team invitations (admin only) |
+| `POST` | `/api/saas/invitations/accept` | Accept an email-bound, one-time invitation |
+| `POST` | `/api/billing/checkout` | Create idempotent Stripe Checkout for PRO or BUSINESS |
+| `POST` | `/api/billing/webhook` | Verify Stripe HMAC and synchronize subscription state |
 | `GET` | `/actuator/health` | CI/cloud health probe |
 
 ## Learning milestones
@@ -202,7 +214,11 @@ an LLM belongs while keeping deterministic tests and safety controls.
    - [x] OpenTelemetry tracing, local Grafana, CloudWatch dashboard, and actionable alarms
    - [x] SLOs, incident runbook, backup policy, and repeatable restore-drill procedure
    - [ ] Execute and record the restore drill in an AWS sandbox account
-   - [ ] Browser authorization-code flow with PKCE for the production UI
+   - [x] Browser authorization-code flow with PKCE for the production UI
+   - [x] Organization onboarding, memberships, roles, and expiring invitations
+   - [x] Enforced FREE/PRO/BUSINESS work-item and monthly agent-run quotas
+   - [x] Stripe Checkout plus timestamped, constant-time verified webhook synchronization
+   - [ ] Execute a real Cognito signup, Stripe test checkout, and invitation identity-transfer drill
 
 Each milestone is done only when code, tests, documentation, and demo evidence agree.
 

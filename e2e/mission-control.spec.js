@@ -12,6 +12,15 @@ test('creates a work item from the JavaScript dashboard', async ({ page }) => {
   await expect(card).toContainText('HIGH');
 });
 
+test('shows the authenticated SaaS organization plan and quota usage', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.locator('#organization-name')).toHaveText('Local Development');
+  await expect(page.locator('#plan-badge')).toHaveText('FREE');
+  await expect(page.locator('#usage-summary')).toContainText('/25 work items');
+  await expect(page.locator('#usage-summary')).toContainText('/10 agent runs this month');
+});
+
 test('agent decomposes a goal into three work items', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Goal').fill('Deploy the REST API to AWS');

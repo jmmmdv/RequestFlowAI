@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fromzerotohero.mission.saas.QuotaService;
 
 @Service
 public class AgentOrchestrator {
@@ -21,14 +22,16 @@ public class AgentOrchestrator {
     private final TenantContext tenantContext;
     private final GoalPlanner planner;
     private final AgentPolicyEngine policy;
+    private final QuotaService quotas;
 
     public AgentOrchestrator(WorkItemRepository workItems, AgentRunRepository runs,
-            TenantContext tenantContext, GoalPlanner planner, AgentPolicyEngine policy) {
+            TenantContext tenantContext, GoalPlanner planner, AgentPolicyEngine policy, QuotaService quotas) {
         this.workItems = workItems;
         this.runs = runs;
         this.tenantContext = tenantContext;
         this.planner = planner;
         this.policy = policy;
+        this.quotas = quotas;
     }
 
     @Transactional
@@ -37,12 +40,15 @@ public class AgentOrchestrator {
         String idempotencyKey = normalizeKey(requestedKey);
         var existing = runs.findByTenantIdAndIdempotencyKey(tenantId, idempotencyKey);
         if (existing.isPresent()) return response(existing.get(), true);
+        quotas.assertAgentRunCapacity(tenantId);
 
         String goal = request.goal().trim().replaceAll("\\s+", " ");
         String normalized = goal.toLowerCase(Locale.ROOT);
         String classification = planner.classify(normalized);
         int budget = request.effectiveToolBudget();
         AgentPolicyEngine.Decision decision = policy.evaluate(normalized, request.createWorkItems(), budget);
+
+        if (decision.outcome().equals("EXECUTED")) quotas.assertWorkItemCapacity(tenantId, REQUIRED_TOOL_CALLS);
 
         List<Long> ids = decision.outcome().equals("EXECUTED")
                 ? createWorkItems(goal, classification, priority(normalized)) : List.of();
@@ -63,6 +69,7 @@ public class AgentOrchestrator {
         if (!run.getOutcome().equals("PENDING_APPROVAL")) {
             throw new AgentApprovalException("Only pending plans can be approved");
         }
+        quotas.assertWorkItemCapacity(tenantContext.tenantId(), REQUIRED_TOOL_CALLS);
         List<Long> ids = createWorkItems(run.getGoal(), run.getClassification(), Priority.CRITICAL);
         run.approve(tenantContext.userId(), ids);
         return response(run, false);

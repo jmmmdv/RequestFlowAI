@@ -38,6 +38,18 @@ class InfrastructureAsCodeTest {
     }
 
     @Test
+    void productionTemplateProvisionsBrowserIdentityAndBillingSecrets() throws Exception {
+        String template = Files.readString(AWS_TEMPLATE);
+        assertThat(template)
+                .contains("Type: AWS::Cognito::UserPool")
+                .contains("Type: AWS::Cognito::UserPoolClient")
+                .contains("AllowedOAuthFlows: [code]")
+                .contains("custom:tenant_id")
+                .contains("STRIPE_WEBHOOK_SECRET")
+                .contains("StripeWebhookSecretArn");
+    }
+
+    @Test
     void localObservabilityStackIsProvisionedAsCode() {
         assertThat(Path.of("infrastructure/observability/otel-collector.yaml")).exists();
         assertThat(Path.of("infrastructure/observability/prometheus.yml")).exists();

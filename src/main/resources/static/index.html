@@ -8,6 +8,11 @@
 </head>
 <body>
   <header>
+    <nav class="account-bar" aria-label="Account">
+      <span id="account-status">Local development</span>
+      <button id="login" class="secondary" hidden>Sign in</button>
+      <button id="logout" class="secondary" hidden>Sign out</button>
+    </nav>
     <p class="eyebrow">FROM ZERO TO HERO</p>
     <h1>Automation Mission Control</h1>
     <p>Plan work, exercise a REST API, and watch an agent turn goals into action.</p>
@@ -16,6 +21,17 @@
     </p>
   </header>
   <main>
+    <section id="saas-panel" class="panel saas-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">SAAS CONTROL PLANE</p><h2 id="organization-name">Your organization</h2></div>
+        <span id="plan-badge" class="plan-badge">LOCAL</span>
+      </div>
+      <p id="usage-summary" class="description">Identity, organization membership, quotas, and billing status.</p>
+      <div class="upgrade-actions">
+        <button data-plan="PRO" class="upgrade">Upgrade to Pro</button>
+        <button data-plan="BUSINESS" class="upgrade secondary">Business plan</button>
+      </div>
+    </section>
     <section class="panel agent-panel">
       <div>
         <p class="eyebrow">AGENTIC AUTOMATION</p>
@@ -101,6 +117,7 @@
       <button class="approve" hidden>Approve &amp; execute</button>
     </article>
   </template>
+  <script src="/config.js"></script>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

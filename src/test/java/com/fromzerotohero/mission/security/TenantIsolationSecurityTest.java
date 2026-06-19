@@ -109,6 +109,18 @@ class TenantIsolationSecurityTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void onlyAdminCanInviteOrganizationMembers() throws Exception {
+        String invitation = "{\"email\":\"candidate@example.com\",\"role\":\"MEMBER\"}";
+        mvc.perform(post("/api/saas/invitations").with(jwtFor(TENANT_A, "VIEWER"))
+                        .contentType(MediaType.APPLICATION_JSON).content(invitation))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/saas/invitations").with(jwtFor(TENANT_A, "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content(invitation))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("MEMBER"));
+    }
+
     private org.springframework.test.web.servlet.request.RequestPostProcessor jwtFor(UUID tenant, String role) {
         return jwt().jwt(token -> token.subject("user-123").claim("tenant_id", tenant.toString()))
                 .authorities(new SimpleGrantedAuthority("ROLE_" + role));

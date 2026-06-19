@@ -4,15 +4,18 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fromzerotohero.mission.security.TenantContext;
+import com.fromzerotohero.mission.saas.QuotaService;
 
 @Service
 public class WorkItemService {
     private final WorkItemRepository repository;
     private final TenantContext tenantContext;
+    private final QuotaService quotas;
 
-    public WorkItemService(WorkItemRepository repository, TenantContext tenantContext) {
+    public WorkItemService(WorkItemRepository repository, TenantContext tenantContext, QuotaService quotas) {
         this.repository = repository;
         this.tenantContext = tenantContext;
+        this.quotas = quotas;
     }
 
     @Transactional(readOnly = true)
@@ -28,6 +31,7 @@ public class WorkItemService {
 
     @Transactional
     public WorkItem create(WorkItemRequest request) {
+        quotas.assertWorkItemCapacity(tenantContext.tenantId(), 1);
         return repository.save(new WorkItem(normalize(request.title()), request.description(),
                 request.priority(), request.status(), tenantContext.tenantId()));
     }

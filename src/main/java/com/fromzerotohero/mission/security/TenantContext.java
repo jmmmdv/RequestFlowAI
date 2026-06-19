@@ -1,5 +1,6 @@
 package com.fromzerotohero.mission.security;
 
+import com.fromzerotohero.mission.saas.MembershipRole;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
@@ -7,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
+import java.util.List;
 
 @Component
 public class TenantContext {
@@ -37,6 +39,32 @@ public class TenantContext {
             throw new AccessDeniedException("A non-empty subject claim is required");
         }
         return subject;
+    }
+
+    public String email() {
+        if (!securityEnabled) return "developer@local.test";
+        String email = authenticatedJwt().getClaimAsString("email");
+        return email == null || email.isBlank() ? null : email.trim().toLowerCase();
+    }
+
+    public String organizationName() {
+        if (!securityEnabled) return "Local Development";
+        String name = authenticatedJwt().getClaimAsString("organization_name");
+        if (name == null) name = authenticatedJwt().getClaimAsString("custom:organization_name");
+        return name == null || name.isBlank() ? "My Organization" : name.trim();
+    }
+
+    public MembershipRole currentRole() {
+        if (!securityEnabled) return MembershipRole.ADMIN;
+        List<String> roles = authenticatedJwt().getClaimAsStringList("roles");
+        List<String> groups = authenticatedJwt().getClaimAsStringList("cognito:groups");
+        if (contains(roles, "ADMIN") || contains(groups, "ADMIN")) return MembershipRole.ADMIN;
+        if (contains(roles, "MEMBER") || contains(groups, "MEMBER")) return MembershipRole.MEMBER;
+        return MembershipRole.VIEWER;
+    }
+
+    private boolean contains(List<String> values, String expected) {
+        return values != null && values.stream().anyMatch(expected::equalsIgnoreCase);
     }
 
     private Jwt authenticatedJwt() {
