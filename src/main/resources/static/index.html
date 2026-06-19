@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Automation Mission Control</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <p class="eyebrow">FROM ZERO TO HERO</p>
+    <h1>Automation Mission Control</h1>
+    <p>Plan work, exercise a REST API, and watch an agent turn goals into action.</p>
+  </header>
+  <main>
+    <section class="panel agent-panel">
+      <div>
+        <p class="eyebrow">AGENTIC AUTOMATION</p>
+        <h2>Give the planning agent a mission</h2>
+      </div>
+      <form id="agent-form">
+        <label for="goal">Goal</label>
+        <div class="form-row">
+          <input id="goal" name="goal" required maxlength="500"
+                 placeholder="Deploy our REST service to AWS">
+          <button type="submit">Build plan</button>
+        </div>
+      </form>
+      <p id="agent-result" class="result" role="status"></p>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">DELIVERY BOARD</p>
+          <h2>Work items</h2>
+        </div>
+        <button id="refresh" class="secondary">Refresh</button>
+      </div>
+      <div class="stats" aria-label="Board summary">
+        <div><strong id="total-count">0</strong><span>Total</span></div>
+        <div><strong id="active-count">0</strong><span>In progress</span></div>
+        <div><strong id="done-count">0</strong><span>Done</span></div>
+      </div>
+      <form id="work-form" class="work-form">
+        <label>Title<input name="title" required maxlength="120" placeholder="Add a meaningful task"></label>
+        <label>Priority
+          <select name="priority"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select>
+        </label>
+        <button type="submit">Add item</button>
+      </form>
+      <div id="error" class="error" role="alert"></div>
+      <div id="board" class="board" aria-live="polite"></div>
+    </section>
+  </main>
+  <template id="card-template">
+    <article class="card">
+      <div class="card-top"><span class="priority"></span><button class="delete" aria-label="Delete work item">×</button></div>
+      <h3></h3><p class="description"></p>
+      <div class="card-actions">
+        <label>Status
+          <select class="status-select" aria-label="Work item status">
+            <option value="BACKLOG">Backlog</option><option value="READY">Ready</option>
+            <option value="IN_PROGRESS">In progress</option><option value="DONE">Done</option>
+          </select>
+        </label>
+      </div>
+    </article>
+  </template>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: App Runner service for the Automation Mission Control container
+Parameters:
+  ImageRepository:
+    Type: String
+    Description: ECR image URI including tag (account.dkr.ecr.region.amazonaws.com/repo:tag)
+Resources:
+  AppRunnerEcrRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: build.apprunner.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+  Service:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: automation-mission-control
+      SourceConfiguration:
+        AutoDeploymentsEnabled: false
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt AppRunnerEcrRole.Arn
+        ImageRepository:
+          ImageIdentifier: !Ref ImageRepository
+          ImageRepositoryType: ECR
+          ImageConfiguration:
+            Port: '8080'
+      HealthCheckConfiguration:
+        Path: /actuator/health
+        Protocol: HTTP
+Outputs:
+  ServiceUrl:
+    Description: Public App Runner hostname
+    Value: !GetAtt Service.ServiceUrl
