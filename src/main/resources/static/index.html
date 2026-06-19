@@ -27,9 +27,22 @@
         <span id="plan-badge" class="plan-badge">LOCAL</span>
       </div>
       <p id="usage-summary" class="description">Identity, organization membership, quotas, and billing status.</p>
+      <p id="billing-notice" class="billing-notice" role="status" hidden></p>
+      <div id="usage-meters" class="usage-meters" aria-live="polite" hidden>
+        <div class="meter">
+          <div class="meter-head"><span>Work items</span><span id="work-items-figure" class="meter-figure"></span></div>
+          <div class="meter-track"><div id="work-items-bar" class="meter-fill"></div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-head"><span>Agent runs this month</span><span id="agent-runs-figure" class="meter-figure"></span></div>
+          <div class="meter-track"><div id="agent-runs-bar" class="meter-fill"></div></div>
+        </div>
+      </div>
+      <p id="saas-meta" class="saas-meta" hidden></p>
       <div class="upgrade-actions">
         <button data-plan="PRO" class="upgrade">Upgrade to Pro</button>
         <button data-plan="BUSINESS" class="upgrade secondary">Business plan</button>
+        <span id="plan-note" class="plan-note" hidden></span>
       </div>
     </section>
     <section class="panel agent-panel">
