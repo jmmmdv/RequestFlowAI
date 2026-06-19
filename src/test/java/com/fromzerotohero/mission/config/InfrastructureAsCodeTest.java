@@ -68,6 +68,7 @@ class InfrastructureAsCodeTest {
                 .contains("\"outputDirectory\": \"src/main/resources/static\"");
         assertThat(Files.readString(Path.of("src/main/resources/static/app.js")))
                 .contains("location.hostname.endsWith('.vercel.app')")
-                .contains("mission-control-demo-v1");
+                .contains("requestflow-ai-demo-v1")
+                .contains("legacyDemoStateKey");
     }
 }

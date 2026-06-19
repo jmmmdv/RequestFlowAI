@@ -12,14 +12,14 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
     @Bean
-    OpenAPI missionControlApi() {
+    OpenAPI requestFlowApi() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Automation Mission Control API")
+                        .title("RequestFlow AI API")
                         .version("v1")
-                        .description("Tenant-aware work management and auditable agent planning API.")
+                        .description("Tenant-aware request work management and auditable planning API.")
                         .contact(new Contact().name("Jeyhun Mammadov"))
-                        .license(new License().name("Portfolio project")))
+                        .license(new License().name("SaaS MVP foundation and portfolio project")))
                 .components(new Components().addSecuritySchemes("bearer-jwt",
                         new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)

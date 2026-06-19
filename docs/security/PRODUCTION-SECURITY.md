@@ -24,6 +24,8 @@ tenant returns `404`, which avoids confirming that the row exists.
 | Endpoint | Policy |
 |---|---|
 | `/actuator/health/**`, `/actuator/info` | Public |
+| `GET/POST /api/public/intake/{organizationSlug}` | Public; server resolves tenant from active organization slug |
+| `GET /api/requests` | Authenticated and tenant-scoped |
 | `/api/work-items/**` | Authenticated |
 | `POST /api/agent/plan` | `MEMBER` or `ADMIN` |
 | `POST /api/agent/runs/{id}/approve` | `ADMIN` |
@@ -50,5 +52,5 @@ execution, tenant A cannot list or fetch tenant B data, and agent audit rows pre
 tenant, and correlation ID attribution.
 
 This is the identity and isolation foundation—not the whole security program. Before public GA,
-add browser authorization-code + PKCE login, WAF/rate limiting, secret rotation, dependency and
-container scanning, backup restore drills, and an external penetration test.
+add WAF/rate limiting and bot protection for intake, secret rotation, dependency and container
+scanning, backup restore drills, request-retention controls, and an external penetration test.

@@ -17,11 +17,11 @@ public class SeedData {
     CommandLineRunner seed(WorkItemRepository repository, TenantContext tenantContext) {
         return args -> {
             if (repository.count() == 0) {
-                repository.save(new WorkItem("Explore the curriculum map",
-                        "Start with README.md and choose a learning path.", Priority.HIGH, WorkStatus.READY,
+                repository.save(new WorkItem("Review the urgent website request",
+                        "Confirm the client impact and agree on the next action.", Priority.HIGH, WorkStatus.READY,
                         tenantContext.tenantId()));
-                repository.save(new WorkItem("Run the first Playwright test",
-                        "Install browser dependencies and execute npm test.", Priority.MEDIUM, WorkStatus.BACKLOG,
+                repository.save(new WorkItem("Prepare the monthly campaign brief",
+                        "Turn the customer request into a clear, trackable deliverable.", Priority.MEDIUM, WorkStatus.BACKLOG,
                         tenantContext.tenantId()));
             }
         };

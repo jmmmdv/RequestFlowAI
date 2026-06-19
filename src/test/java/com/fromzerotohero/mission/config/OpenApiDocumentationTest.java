@@ -20,8 +20,10 @@ class OpenApiDocumentationTest {
     void publishesDocumentedOperationsAndJwtScheme() throws Exception {
         mvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.info.title").value("Automation Mission Control API"))
+                .andExpect(jsonPath("$.info.title").value("RequestFlow AI API"))
                 .andExpect(jsonPath("$.paths['/api/work-items'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/public/intake/{organizationSlug}'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/requests'].get").exists())
                 .andExpect(jsonPath("$.paths['/api/agent/plan'].post").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.bearer-jwt.scheme").value("bearer"));
     }

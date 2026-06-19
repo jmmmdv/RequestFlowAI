@@ -369,7 +369,7 @@ Resources:
   DatabasePasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: Automation Mission Control PostgreSQL password
+      Description: RequestFlow AI PostgreSQL password
       GenerateSecretString:
         PasswordLength: 32
         ExcludePunctuation: true

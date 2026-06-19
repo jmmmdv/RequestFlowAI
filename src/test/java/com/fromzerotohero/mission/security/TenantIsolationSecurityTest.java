@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fromzerotohero.mission.agent.AgentRunRepository;
+import com.fromzerotohero.mission.intake.RequestSubmissionRepository;
 import com.fromzerotohero.mission.workitem.Priority;
 import com.fromzerotohero.mission.workitem.WorkItem;
 import com.fromzerotohero.mission.workitem.WorkItemRepository;
@@ -38,11 +39,15 @@ class TenantIsolationSecurityTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired WorkItemRepository workItems;
     @Autowired AgentRunRepository agentRuns;
+    @Autowired RequestSubmissionRepository submissions;
 
     @BeforeEach
     void setUpTenants() {
+        submissions.deleteAll();
         agentRuns.deleteAll();
         workItems.deleteAll();
+        jdbc.update("update tenant set name = ?, slug = ?, plan = 'FREE', status = 'ACTIVE' where id = ?",
+                "Local Development", "local", TENANT_A);
         Integer existing = jdbc.queryForObject("select count(*) from tenant where id = ?", Integer.class, TENANT_B);
         if (existing == 0) {
             jdbc.update("insert into tenant (id, name, slug, created_at) values (?, ?, ?, current_timestamp)",
@@ -54,6 +59,30 @@ class TenantIsolationSecurityTest {
     void rejectsUnauthenticatedApiRequests() throws Exception {
         mvc.perform(get("/api/work-items"))
                 .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/requests"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void publicRequestIntakeAllowsSubmissionWithoutTrustingAClientTenantId() throws Exception {
+        mvc.perform(post("/api/public/intake/local")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"requesterName":"Public User","requesterEmail":"public@example.com",
+                                 "title":"Support request","details":"The account page is not working for our team."}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.category").value("SUPPORT"));
+
+        org.assertj.core.api.Assertions.assertThat(
+                workItems.findAllByTenantIdOrderByUpdatedAtDesc(TENANT_A)).hasSize(1);
+        org.assertj.core.api.Assertions.assertThat(
+                workItems.findAllByTenantIdOrderByUpdatedAtDesc(TENANT_B)).isEmpty();
+        UUID requestId = submissions.findAllByTenantIdOrderByCreatedAtDesc(TENANT_A).getFirst().getId();
+        mvc.perform(get("/api/requests/{id}", requestId).with(jwtFor(TENANT_A, "VIEWER")))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/requests/{id}", requestId).with(jwtFor(TENANT_B, "VIEWER")))
+                .andExpect(status().isNotFound());
     }
 
     @Test

@@ -1,8 +1,33 @@
 import { expect, test } from '@playwright/test';
 
+test('shows the customer journey and honest pricing', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { name: 'From scattered messages to clear next steps' })).toBeVisible();
+  await expect(page.locator('#pricing')).toContainText('FREE');
+  await expect(page.locator('#pricing')).toContainText('Pilot pricing coming soon');
+  await expect(page.getByRole('heading', { name: /Send a request to/ })).toContainText('Local Development');
+});
+
+test('public intake classifies a request and adds it to the workspace', async ({ page }) => {
+  await page.goto('/');
+  const title = `Booking form outage ${Date.now()}`;
+
+  const intake = page.locator('#intake-form');
+  await intake.getByLabel('Your name').fill('Taylor Client');
+  await intake.getByLabel('Email').fill('taylor@example.com');
+  await intake.getByLabel('What do you need?').fill(title);
+  await intake.getByLabel('Details').fill('Urgent: customers cannot access the booking form today.');
+  await intake.getByRole('button', { name: 'Send request' }).click();
+
+  await expect(page.locator('#intake-result')).toContainText('Request received · Support · CRITICAL priority');
+  await expect(page.locator('.request-card').filter({ hasText: title })).toContainText('Taylor Client');
+  await expect(page.locator('.card').filter({ hasText: title })).toContainText('CRITICAL');
+});
+
 test('creates a work item from the JavaScript dashboard', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Automation Mission Control' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'RequestFlow AI' })).toBeVisible();
 
   await page.getByLabel('Title').fill('Learn Playwright locators');
   await page.getByLabel('Priority').selectOption('HIGH');
@@ -18,7 +43,7 @@ test('shows the authenticated SaaS organization plan and quota usage', async ({ 
   await expect(page.locator('#organization-name')).toHaveText('Local Development');
   await expect(page.locator('#plan-badge')).toHaveText('FREE');
   await expect(page.locator('#usage-summary')).toContainText('/25 work items');
-  await expect(page.locator('#usage-summary')).toContainText('/10 agent runs this month');
+  await expect(page.locator('#usage-summary')).toContainText('/10 assisted plans this month');
 });
 
 test('renders quota meters and offers an upgrade on the free plan', async ({ page }) => {
@@ -37,9 +62,10 @@ test('lists members and creates a teammate invitation', async ({ page }) => {
   await expect(page.locator('#team-panel')).toBeVisible();
   await expect(page.locator('#members-list')).toContainText('ADMIN');
 
-  await page.getByLabel('Email').fill('teammate@example.com');
-  await page.getByLabel('Role').selectOption('MEMBER');
-  await page.getByRole('button', { name: 'Send invite' }).click();
+  const inviteForm = page.locator('#invite-form');
+  await inviteForm.getByLabel('Email').fill('teammate@example.com');
+  await inviteForm.getByLabel('Role').selectOption('MEMBER');
+  await inviteForm.getByRole('button', { name: 'Send invite' }).click();
 
   await expect(page.locator('#invite-result')).toBeVisible();
   await expect(page.locator('#invite-token')).not.toBeEmpty();
@@ -50,9 +76,10 @@ test('accepts an invitation with its one-time token', async ({ page }) => {
   await page.goto('/');
 
   // Invite the current user's own email so acceptance is permitted.
-  await page.getByLabel('Email').fill('developer@local.test');
-  await page.getByLabel('Role').selectOption('MEMBER');
-  await page.getByRole('button', { name: 'Send invite' }).click();
+  const inviteForm = page.locator('#invite-form');
+  await inviteForm.getByLabel('Email').fill('developer@local.test');
+  await inviteForm.getByLabel('Role').selectOption('MEMBER');
+  await inviteForm.getByRole('button', { name: 'Send invite' }).click();
   await expect(page.locator('#invite-token')).not.toBeEmpty();
   const token = await page.locator('#invite-token').textContent();
 
@@ -64,19 +91,19 @@ test('accepts an invitation with its one-time token', async ({ page }) => {
 
 test('agent decomposes a goal into three work items', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('Goal').fill('Deploy the REST API to AWS');
-  await page.getByRole('button', { name: 'Build plan' }).click();
+  await page.getByLabel('Request').fill('Prepare the client campaign brief');
+  await page.getByRole('button', { name: 'Create work plan' }).click();
 
   await expect(page.getByRole('status')).toContainText('created 3 work items');
-  await expect(page.locator('.card').filter({ hasText: 'Deploy the REST API to AWS' })).toHaveCount(3);
-  await expect(page.locator('.run-card').filter({ hasText: 'Deploy the REST API to AWS' })).toContainText('EXECUTED');
+  await expect(page.locator('.card').filter({ hasText: 'Prepare the client campaign brief' })).toHaveCount(3);
+  await expect(page.locator('.run-card').filter({ hasText: 'Prepare the client campaign brief' })).toContainText('EXECUTED');
 });
 
 test('high-impact agent work requires approval before tools run', async ({ page }) => {
   await page.goto('/');
-  const goal = `Fix urgent production outage ${Date.now()}`;
-  await page.getByLabel('Goal').fill(goal);
-  await page.getByRole('button', { name: 'Build plan' }).click();
+  const goal = `Urgent production outage for the client portal ${Date.now()}`;
+  await page.getByLabel('Request').fill(goal);
+  await page.getByRole('button', { name: 'Create work plan' }).click();
 
   await expect(page.getByRole('status')).toContainText('waiting for human approval');
   await expect(page.locator('.card').filter({ hasText: goal })).toHaveCount(0);

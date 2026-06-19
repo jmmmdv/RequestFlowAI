@@ -3,30 +3,89 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Automation Mission Control</title>
+  <title>RequestFlow AI</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header>
     <nav class="account-bar" aria-label="Account">
-      <span id="account-status">Local development</span>
-      <button id="login" class="secondary" hidden>Sign in</button>
-      <button id="logout" class="secondary" hidden>Sign out</button>
+      <a class="nav-brand" href="#top">RequestFlow AI</a>
+      <div class="nav-links">
+        <a href="#how-it-works">How it works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#request-intake">Send a request</a>
+        <span id="account-status">Local development</span>
+        <button id="login" class="secondary" hidden>Sign in</button>
+        <button id="logout" class="secondary" hidden>Sign out</button>
+      </div>
     </nav>
-    <p class="eyebrow">FROM ZERO TO HERO</p>
-    <h1>Automation Mission Control</h1>
-    <p>Plan work, exercise a REST API, and watch an agent turn goals into action.</p>
+    <div id="top"></div>
+    <p class="eyebrow hero-kicker">REQUESTS IN. CLEAR WORK OUT.</p>
+    <h1>RequestFlow AI</h1>
+    <p>Collect requests in one place, know what is urgent, and turn every request into trackable work.</p>
+    <div class="hero-actions">
+      <a class="button-link" href="#request-intake">Send a request</a>
+      <button id="start-free" class="secondary" type="button">Start free</button>
+    </div>
     <p id="demo-notice" class="demo-notice" hidden>
-      Portfolio demo · changes stay in this browser. The production Java API runs on AWS App Runner.
+      Pilot demo · changes stay in this browser. Production identity, data, and billing require configuration.
     </p>
   </header>
   <main>
-    <section id="saas-panel" class="panel saas-panel">
+    <section id="how-it-works" class="marketing-section">
+      <div class="marketing-heading">
+        <p class="eyebrow">A SIMPLE REQUEST FLOW</p>
+        <h2>From scattered messages to clear next steps</h2>
+        <p class="description">Give customers and teammates one place to ask. RequestFlow AI keeps the original request, suggests what matters, and creates work your team can track.</p>
+      </div>
+      <div class="value-grid">
+        <article><span>01</span><h3>Collect requests</h3><p>Use one shareable form instead of chasing email, calls, and messages.</p></article>
+        <article><span>02</span><h3>Know what is urgent</h3><p>Get a rule-based category, priority suggestion, summary, and recommended next action.</p></article>
+        <article><span>03</span><h3>Track the work</h3><p>Turn every submission into a visible work item with an owner-ready status.</p></article>
+      </div>
+    </section>
+
+    <section id="pricing" class="marketing-section">
+      <div class="marketing-heading">
+        <p class="eyebrow">START SMALL. GROW WHEN READY.</p>
+        <h2>Simple plans for small teams</h2>
+        <p class="description">The limits below are enforced by the application. Stripe Checkout is available when production billing is configured.</p>
+      </div>
+      <div class="pricing-grid">
+        <article class="price-card"><p class="eyebrow">FREE</p><h3>$0 <span>/ month</span></h3><p>For trying the workflow.</p><ul><li>25 work items</li><li>10 assisted plans monthly</li><li>Team workspace</li></ul><a class="button-link secondary-link" href="#request-intake">Start free</a></article>
+        <article class="price-card featured"><p class="eyebrow">PRO</p><h3>Pilot pricing <span>coming soon</span></h3><p>For active service teams.</p><ul><li>1,000 work items</li><li>500 assisted plans monthly</li><li>Team invitations and billing foundation</li></ul><a class="button-link" href="#workspace">View workspace</a></article>
+        <article class="price-card"><p class="eyebrow">BUSINESS</p><h3>Contact us</h3><p>For higher-volume teams.</p><ul><li>10,000 work items</li><li>5,000 assisted plans monthly</li><li>Production configuration support</li></ul><a class="button-link secondary-link" href="#request-intake">Join the pilot</a></article>
+      </div>
+    </section>
+
+    <section id="request-intake" class="panel intake-panel">
+      <div class="marketing-heading">
+        <p class="eyebrow">PUBLIC REQUEST PORTAL</p>
+        <h2>Send a request to <span id="intake-organization">the team</span></h2>
+        <p id="intake-description" class="description">Share what you need. You will receive a reference, suggested priority, and clear next step.</p>
+      </div>
+      <form id="intake-form" class="intake-form">
+        <label>Your name<input name="requesterName" required maxlength="120" autocomplete="name" placeholder="Alex Morgan"></label>
+        <label>Email<input name="requesterEmail" type="email" required maxlength="254" autocomplete="email" placeholder="alex@example.com"></label>
+        <label class="wide">What do you need?<input name="title" required maxlength="120" placeholder="The booking form is not working"></label>
+        <label class="wide">Details<textarea name="details" required minlength="10" maxlength="2000" rows="5" placeholder="Tell us what happened, who is affected, and when you need help."></textarea></label>
+        <button type="submit">Send request</button>
+      </form>
+      <div id="intake-result" class="intake-result" role="status" aria-live="polite" hidden></div>
+      <p id="intake-error" class="error" role="alert"></p>
+    </section>
+
+    <section id="workspace" class="workspace-heading workspace-panel">
+      <p class="eyebrow">TEAM WORKSPACE</p>
+      <h2>Keep every request moving</h2>
+    </section>
+
+    <section id="saas-panel" class="panel saas-panel workspace-panel">
       <div class="section-heading">
-        <div><p class="eyebrow">SAAS CONTROL PLANE</p><h2 id="organization-name">Your organization</h2></div>
+        <div><p class="eyebrow">PLAN &amp; USAGE</p><h2 id="organization-name">Your organization</h2></div>
         <span id="plan-badge" class="plan-badge">LOCAL</span>
       </div>
-      <p id="usage-summary" class="description">Identity, organization membership, quotas, and billing status.</p>
+      <p id="usage-summary" class="description">See your workspace usage and upgrade when your team grows.</p>
       <p id="billing-notice" class="billing-notice" role="status" hidden></p>
       <div id="usage-meters" class="usage-meters" aria-live="polite" hidden>
         <div class="meter">
@@ -34,7 +93,7 @@
           <div class="meter-track"><div id="work-items-bar" class="meter-fill"></div></div>
         </div>
         <div class="meter">
-          <div class="meter-head"><span>Agent runs this month</span><span id="agent-runs-figure" class="meter-figure"></span></div>
+          <div class="meter-head"><span>Assisted plans this month</span><span id="agent-runs-figure" class="meter-figure"></span></div>
           <div class="meter-track"><div id="agent-runs-bar" class="meter-fill"></div></div>
         </div>
       </div>
@@ -53,7 +112,7 @@
       </form>
       <p id="accept-result" class="result" aria-live="polite"></p>
     </section>
-    <section id="team-panel" class="panel saas-panel" hidden>
+    <section id="team-panel" class="panel saas-panel workspace-panel" hidden>
       <div class="section-heading">
         <div><p class="eyebrow">TEAM &amp; ACCESS</p><h2>Members and invitations</h2></div>
         <button id="refresh-team" class="secondary">Refresh</button>
@@ -83,49 +142,59 @@
         </div>
       </div>
     </section>
-    <section class="panel agent-panel">
+    <section id="requests-panel" class="panel workspace-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">INCOMING REQUESTS</p><h2>Request inbox</h2></div>
+        <button id="refresh-requests" class="secondary">Refresh requests</button>
+      </div>
+      <p class="description">Original submissions stay connected to the work created from them.</p>
+      <div id="request-error" class="error" role="alert"></div>
+      <div id="request-board" class="request-board" aria-live="polite"></div>
+    </section>
+
+    <section class="panel agent-panel workspace-panel">
       <div>
-        <p class="eyebrow">AGENTIC AUTOMATION</p>
-        <h2>Give the planning agent a mission</h2>
+        <p class="eyebrow">REQUEST ASSISTANT</p>
+        <h2>Turn a request into a clear work plan</h2>
       </div>
       <form id="agent-form">
-        <label for="goal">Goal</label>
+        <label for="goal">Request</label>
         <div class="form-row">
           <input id="goal" name="goal" required maxlength="500"
-                 placeholder="Deploy our REST service to AWS">
-          <button type="submit">Build plan</button>
+                 placeholder="Update the client website before Friday">
+          <button type="submit">Create work plan</button>
         </div>
         <div class="agent-controls">
-          <label class="check-control"><input type="checkbox" name="createWorkItems" checked> Execute safe plans</label>
-          <label>Tool-call budget
-            <select name="toolBudget" aria-label="Tool-call budget">
+          <label class="check-control"><input type="checkbox" name="createWorkItems" checked> Add work items to the board</label>
+          <label>Maximum work steps
+            <select name="toolBudget" aria-label="Maximum work steps">
               <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
             </select>
           </label>
-          <span>High-impact missions wait for human approval.</span>
+          <span>Urgent or high-impact requests wait for approval.</span>
         </div>
       </form>
       <p id="agent-result" class="result" role="status"></p>
     </section>
 
-    <section class="panel">
+    <section class="panel workspace-panel">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">GOVERNANCE EVIDENCE</p>
-          <h2>Agent audit trail</h2>
+          <p class="eyebrow">ACTIVITY &amp; APPROVALS</p>
+          <h2>Automation history</h2>
         </div>
-        <button id="refresh-runs" class="secondary">Refresh audits</button>
+        <button id="refresh-runs" class="secondary">Refresh history</button>
       </div>
-      <p class="description">Every decision is tenant-scoped, attributable, budgeted, and safe to retry.</p>
+      <p class="description">See what was suggested, who approved it, and what work was created.</p>
       <div id="run-error" class="error" role="alert"></div>
       <div id="run-board" class="run-board" aria-live="polite"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel workspace-panel">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">DELIVERY BOARD</p>
-          <h2>Work items</h2>
+          <p class="eyebrow">REQUEST WORKSPACE</p>
+          <h2>Trackable work</h2>
         </div>
         <button id="refresh" class="secondary">Refresh</button>
       </div>
@@ -135,7 +204,7 @@
         <div><strong id="done-count">0</strong><span>Done</span></div>
       </div>
       <form id="work-form" class="work-form">
-        <label>Title<input name="title" required maxlength="120" placeholder="Add a meaningful task"></label>
+        <label>Title<input name="title" required maxlength="120" placeholder="Add the next action"></label>
         <label>Priority
           <select name="priority"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select>
         </label>
@@ -178,6 +247,16 @@
       <p class="run-meta"></p>
       <p class="run-identity"></p>
       <button class="approve" hidden>Approve &amp; execute</button>
+    </article>
+  </template>
+  <template id="request-template">
+    <article class="request-card">
+      <div class="card-top"><span class="request-category"></span><time></time></div>
+      <h3></h3>
+      <p class="request-from"></p>
+      <p class="description request-summary"></p>
+      <p class="request-action"></p>
+      <div class="request-meta"><span class="priority"></span><span class="request-status"></span></div>
     </article>
   </template>
   <script src="/config.js"></script>
