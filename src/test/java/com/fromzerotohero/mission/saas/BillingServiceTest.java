@@ -2,6 +2,9 @@ package com.fromzerotohero.mission.saas;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -11,8 +14,14 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fromzerotohero.mission.security.TenantContext;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Instant;
+import java.util.HexFormat;
+import java.util.Optional;
 import java.util.UUID;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,5 +111,47 @@ class BillingServiceTest {
                 .isInstanceOf(SaasException.class)
                 .hasMessageContaining("Stripe price is not configured");
         stripeServer.verify();
+    }
+
+    @Test
+    void trialingSubscriptionKeepsTheCurrentPaidPlan() throws Exception {
+        BillingSubscription existing = new BillingSubscription(TENANT);
+        existing.synchronize("cus_x", "sub_x", Plan.PRO, "ACTIVE", null);
+        when(subscriptions.findByStripeSubscriptionId("sub_x")).thenReturn(Optional.of(existing));
+        TenantOrganization organization = new TenantOrganization(TENANT, "Acme", "acme");
+        organization.changePlan(Plan.PRO);
+        when(organizations.findById(TENANT)).thenReturn(Optional.of(organization));
+
+        String payload = """
+                {"type":"customer.subscription.updated","data":{"object":{
+                  "id":"sub_x","customer":"cus_x","status":"trialing","current_period_end":1893456000}}}
+                """.trim();
+        billingWith("price_pro", "price_business").processWebhook(payload, signedHeader(payload));
+
+        assertThat(existing.getStatus()).isEqualTo("TRIALING");
+        assertThat(existing.getPlan()).isEqualTo(Plan.PRO);
+        assertThat(organization.getPlan()).isEqualTo(Plan.PRO);
+    }
+
+    @Test
+    void unknownSubscriptionEventIsIgnored() throws Exception {
+        when(subscriptions.findByStripeSubscriptionId("sub_missing")).thenReturn(Optional.empty());
+
+        String payload = """
+                {"type":"customer.subscription.deleted","data":{"object":{
+                  "id":"sub_missing","customer":"cus_missing","status":"canceled"}}}
+                """.trim();
+        billingWith("price_pro", "price_business").processWebhook(payload, signedHeader(payload));
+
+        verify(organizations, never()).findById(any());
+    }
+
+    private String signedHeader(String payload) throws Exception {
+        long timestamp = Instant.now().getEpochSecond();
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec("whsec_test".getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        String signature = HexFormat.of()
+                .formatHex(mac.doFinal((timestamp + "." + payload).getBytes(StandardCharsets.UTF_8)));
+        return "t=" + timestamp + ",v1=" + signature;
     }
 }
