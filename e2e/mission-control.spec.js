@@ -46,6 +46,22 @@ test('lists members and creates a teammate invitation', async ({ page }) => {
   await expect(page.locator('#invitations-list')).toContainText('teammate@example.com');
 });
 
+test('accepts an invitation with its one-time token', async ({ page }) => {
+  await page.goto('/');
+
+  // Invite the current user's own email so acceptance is permitted.
+  await page.getByLabel('Email').fill('developer@local.test');
+  await page.getByLabel('Role').selectOption('MEMBER');
+  await page.getByRole('button', { name: 'Send invite' }).click();
+  await expect(page.locator('#invite-token')).not.toBeEmpty();
+  const token = await page.locator('#invite-token').textContent();
+
+  await page.getByLabel('Have an invitation? Paste your token').fill(token.trim());
+  await page.getByRole('button', { name: 'Accept invitation' }).click();
+
+  await expect(page.locator('#accept-result')).toContainText('Joined');
+});
+
 test('agent decomposes a goal into three work items', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Goal').fill('Deploy the REST API to AWS');
