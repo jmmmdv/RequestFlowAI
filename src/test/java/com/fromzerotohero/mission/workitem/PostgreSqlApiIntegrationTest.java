@@ -46,7 +46,7 @@ class PostgreSqlApiIntegrationTest {
         String version = jdbc.queryForObject(
                 "select version from flyway_schema_history where success order by installed_rank desc limit 1",
                 String.class);
-        assertThat(version).isEqualTo("6");
+        assertThat(version).isEqualTo("7");
 
         Integer safetyColumns = jdbc.queryForObject("""
                 select count(*) from information_schema.columns
@@ -74,6 +74,13 @@ class PostgreSqlApiIntegrationTest {
                   and column_name in ('company_name', 'requested_category', 'requested_urgency')
                 """, Integer.class);
         assertThat(intakeMetadataColumns).isEqualTo(3);
+
+        Integer portalControlColumns = jdbc.queryForObject("""
+                select count(*) from information_schema.columns
+                where table_name = 'tenant'
+                  and column_name in ('portal_token_hash', 'request_retention_days', 'onboarding_completed')
+                """, Integer.class);
+        assertThat(portalControlColumns).isEqualTo(3);
 
         var response = mvc.perform(post("/api/work-items")
                         .contentType(MediaType.APPLICATION_JSON)

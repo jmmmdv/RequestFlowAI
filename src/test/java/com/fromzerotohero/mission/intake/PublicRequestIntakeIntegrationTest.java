@@ -39,6 +39,7 @@ class PublicRequestIntakeIntegrationTest {
         var organization = organizations.findById(TENANT).orElseThrow();
         organization.rename("Local Development", "local");
         organization.changePlan(Plan.FREE);
+        organization.clearPortalToken();
         organizations.save(organization);
     }
 

@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fromzerotohero.mission.saas.Plan;
 import com.fromzerotohero.mission.saas.TenantOrganizationRepository;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,15 @@ class PublicIntakeProtectionIntegrationTest {
 
     @BeforeEach
     void resetOrganization() {
+        restoreOrganization();
+    }
+
+    @AfterEach
+    void cleanupOrganization() {
+        restoreOrganization();
+    }
+
+    private void restoreOrganization() {
         var organization = organizations.findById(TENANT).orElseThrow();
         organization.rename("Local Development", "local");
         organization.changePlan(Plan.FREE);
