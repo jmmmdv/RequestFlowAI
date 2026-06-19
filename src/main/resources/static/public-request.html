@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Send a request through a RequestFlow AI customer portal.">
+  <meta name="theme-color" content="#08111f">
+  <title>Send a request — RequestFlow AI</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="public-request-page">
+  <header class="public-request-header">
+    <a class="nav-brand" href="/">RequestFlow AI</a>
+    <span>Secure request portal</span>
+  </header>
+  <main class="public-request-main">
+    <section class="request-page-intro">
+      <p class="eyebrow">SHARE WHAT YOU NEED</p>
+      <h1>Send a request to <span id="portal-organization">the team</span></h1>
+      <p id="portal-description">Add the details below. The team will receive an organized request with a clear reference number.</p>
+      <div class="request-expectations">
+        <span><strong>1</strong> Tell us what happened</span>
+        <span><strong>2</strong> Receive a reference</span>
+        <span><strong>3</strong> The team tracks the work</span>
+      </div>
+    </section>
+
+    <section id="request-form-panel" class="panel public-form-panel">
+      <form id="public-request-form" class="intake-form">
+        <label>Your name
+          <input name="requesterName" required maxlength="120" autocomplete="name" placeholder="Alex Morgan">
+        </label>
+        <label>Your email
+          <input name="requesterEmail" type="email" required maxlength="254" autocomplete="email" placeholder="alex@example.com">
+        </label>
+        <label class="wide">Company or client name
+          <input name="companyName" required maxlength="160" autocomplete="organization" placeholder="Brightside Services">
+        </label>
+        <label class="wide">Request title
+          <input name="title" required maxlength="120" placeholder="The booking form is not working">
+        </label>
+        <label class="wide">Request details
+          <textarea name="details" required minlength="10" maxlength="2000" rows="6" placeholder="Tell us what happened, who is affected, and when you need help."></textarea>
+          <small>Include enough detail for the team to understand the next step.</small>
+        </label>
+        <label>Category <span class="optional">Optional</span>
+          <select name="category">
+            <option value="">Let the team organize it</option>
+            <option value="SUPPORT">Support or something broken</option>
+            <option value="BILLING">Billing or payment</option>
+            <option value="SALES">Quote or new work</option>
+            <option value="CHANGE_REQUEST">Change or update</option>
+            <option value="GENERAL">Something else</option>
+          </select>
+        </label>
+        <label>Urgency <span class="optional">Optional</span>
+          <select name="urgency">
+            <option value="">Let the team decide</option>
+            <option value="LOW">Low — no rush</option>
+            <option value="NORMAL">Normal</option>
+            <option value="HIGH">High — needed soon</option>
+            <option value="URGENT">Urgent — work is blocked</option>
+          </select>
+        </label>
+        <div class="wide form-submit-row">
+          <button type="submit">Send request</button>
+          <span>Your category and urgency help the team organize the request; they do not approve work automatically.</span>
+        </div>
+      </form>
+      <p id="public-request-error" class="error" role="alert"></p>
+    </section>
+
+    <section id="request-confirmation" class="panel confirmation-panel" role="status" aria-live="polite" hidden>
+      <span class="confirmation-mark" aria-hidden="true">✓</span>
+      <p class="eyebrow">REQUEST RECEIVED</p>
+      <h2>Your request is in</h2>
+      <p>The team has received your request and can now track it through their workflow.</p>
+      <div class="confirmation-reference">
+        <span>Reference number</span>
+        <strong id="confirmation-reference"></strong>
+      </div>
+      <dl class="confirmation-details">
+        <div><dt>Status</dt><dd id="confirmation-status">New</dd></div>
+        <div><dt>Suggested priority</dt><dd id="confirmation-priority"></dd></div>
+        <div><dt>Organized as</dt><dd id="confirmation-category"></dd></div>
+      </dl>
+      <p id="confirmation-next" class="confirmation-next"></p>
+      <button id="send-another-request" type="button" class="secondary">Send another request</button>
+    </section>
+  </main>
+  <footer class="public-request-footer">
+    <span>Powered by RequestFlow AI</span>
+    <span>Do not include passwords, payment details, or other sensitive secrets.</span>
+  </footer>
+  <script src="/config.js"></script>
+  <script type="module" src="/public-request.js"></script>
+</body>
+</html>

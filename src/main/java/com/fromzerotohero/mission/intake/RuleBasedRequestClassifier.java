@@ -7,11 +7,25 @@ import org.springframework.stereotype.Component;
 @Component
 public class RuleBasedRequestClassifier {
     public Classification classify(String title, String details) {
+        return classify(title, details, null, null);
+    }
+
+    public Classification classify(String title, String details,
+            RequestCategory requestedCategory, RequestUrgency requestedUrgency) {
         String text = (title + " " + details).toLowerCase(Locale.ROOT);
-        RequestCategory category = category(text);
-        Priority priority = priority(text);
+        RequestCategory category = requestedCategory == null ? category(text) : requestedCategory;
+        Priority priority = requestedUrgency == null ? priority(text) : priority(requestedUrgency);
         return new Classification(category, priority,
                 summary(title, details), recommendedNextAction(category, priority));
+    }
+
+    private Priority priority(RequestUrgency urgency) {
+        return switch (urgency) {
+            case LOW -> Priority.LOW;
+            case NORMAL -> Priority.MEDIUM;
+            case HIGH -> Priority.HIGH;
+            case URGENT -> Priority.CRITICAL;
+        };
     }
 
     private RequestCategory category(String text) {

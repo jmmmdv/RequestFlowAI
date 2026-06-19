@@ -53,13 +53,14 @@ public class RequestIntakeService {
 
         String title = normalize(request.title());
         String details = normalize(request.details());
-        var classification = classifier.classify(title, details);
+        var classification = classifier.classify(title, details, request.category(), request.urgency());
         quotas.assertWorkItemCapacity(organization.getId(), 1);
         WorkItem workItem = workItems.save(new WorkItem(title, classification.internalSummary(),
                 classification.priority(), WorkStatus.BACKLOG, organization.getId()));
         RequestSubmission submission = submissions.save(new RequestSubmission(organization.getId(),
                 idempotencyKey, normalize(request.requesterName()), request.requesterEmail().trim().toLowerCase(Locale.ROOT),
-                title, details, classification, workItem.getId()));
+                normalize(request.companyName()), title, details, request.category(), request.urgency(),
+                classification, workItem.getId()));
         return receipt(submission, false);
     }
 
@@ -96,19 +97,23 @@ public class RequestIntakeService {
     private String normalize(String value) { return value.trim().replaceAll("\\s+", " "); }
 
     private Receipt receipt(RequestSubmission submission, boolean replayed) {
-        return new Receipt(submission.getId(), submission.getCategory(), submission.getSuggestedPriority(),
+        return new Receipt(submission.getId(), submission.getReferenceNumber(), submission.getStatus(),
+                submission.getCategory(), submission.getSuggestedPriority(),
                 submission.getRecommendedNextAction(), submission.getCreatedAt(), replayed);
     }
 
     public record IntakeRequest(
             @NotBlank @Size(max = 120) String requesterName,
             @NotBlank @Email @Size(max = 254) String requesterEmail,
+            @NotBlank @Size(max = 160) String companyName,
             @NotBlank @Size(max = 120) String title,
-            @NotBlank @Size(min = 10, max = 2000) String details) {}
+            @NotBlank @Size(min = 10, max = 2000) String details,
+            RequestCategory category,
+            RequestUrgency urgency) {}
 
     public record Portal(String organizationName, String organizationSlug) {}
 
-    public record Receipt(UUID requestId, RequestCategory category,
+    public record Receipt(UUID requestId, String referenceNumber, String status, RequestCategory category,
             com.fromzerotohero.mission.workitem.Priority suggestedPriority,
             String recommendedNextAction, java.time.Instant receivedAt, boolean replayed) {}
 }

@@ -120,9 +120,17 @@
       <form id="intake-form" class="intake-form">
         <label>Your name<input name="requesterName" required maxlength="120" autocomplete="name" placeholder="Alex Morgan"></label>
         <label>Email<input name="requesterEmail" type="email" required maxlength="254" autocomplete="email" placeholder="alex@example.com"></label>
+        <label class="wide">Company or client name<input name="companyName" required maxlength="160" autocomplete="organization" placeholder="Brightside Services"></label>
         <label class="wide">What do you need?<input name="title" required maxlength="120" placeholder="The booking form is not working"></label>
         <label class="wide">Details<textarea name="details" required minlength="10" maxlength="2000" rows="5" placeholder="Tell us what happened, who is affected, and when you need help."></textarea></label>
+        <label>Category <span class="optional">Optional</span>
+          <select name="category"><option value="">Let the team organize it</option><option value="SUPPORT">Support</option><option value="BILLING">Billing</option><option value="SALES">Quote or new work</option><option value="CHANGE_REQUEST">Change or update</option><option value="GENERAL">Something else</option></select>
+        </label>
+        <label>Urgency <span class="optional">Optional</span>
+          <select name="urgency"><option value="">Let the team decide</option><option value="LOW">Low</option><option value="NORMAL">Normal</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select>
+        </label>
         <button type="submit">Send request</button>
+        <a id="share-form-link" class="button-link secondary-link" href="/public-request.html?organization=local">Open shareable form</a>
       </form>
       <div id="intake-result" class="intake-result" role="status" aria-live="polite" hidden></div>
       <p id="intake-error" class="error" role="alert"></p>
@@ -312,6 +320,7 @@
       <div class="card-top"><span class="request-category"></span><time></time></div>
       <h3></h3>
       <p class="request-from"></p>
+      <p class="request-preferences"></p>
       <p class="description request-summary"></p>
       <p class="request-action"></p>
       <div class="request-meta"><span class="priority"></span><span class="request-status"></span></div>

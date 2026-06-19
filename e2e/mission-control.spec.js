@@ -31,13 +31,45 @@ test('public intake classifies a request and adds it to the workspace', async ({
   const intake = page.locator('#intake-form');
   await intake.getByLabel('Your name').fill('Taylor Client');
   await intake.getByLabel('Email').fill('taylor@example.com');
+  await intake.getByLabel('Company or client name').fill('Taylor Studio');
   await intake.getByLabel('What do you need?').fill(title);
   await intake.getByLabel('Details').fill('Urgent: customers cannot access the booking form today.');
+  await intake.getByLabel('Category Optional').selectOption('SUPPORT');
+  await intake.getByLabel('Urgency Optional').selectOption('URGENT');
   await intake.getByRole('button', { name: 'Send request' }).click();
 
   await expect(page.locator('#intake-result')).toContainText('Request received · Support · CRITICAL priority');
-  await expect(page.locator('.request-card').filter({ hasText: title })).toContainText('Taylor Client');
+  const requestCard = page.locator('.request-card').filter({ hasText: title });
+  await expect(requestCard).toContainText('Taylor Client · Taylor Studio');
+  await expect(requestCard).toContainText('NEW');
   await expect(page.locator('.card').filter({ hasText: title })).toContainText('CRITICAL');
+});
+
+test('client uses a dedicated shared form and the owner sees the request', async ({ page }) => {
+  const title = `Client campaign request ${Date.now()}`;
+  await page.goto('/public-request.html?organization=local');
+
+  await expect(page.getByRole('heading', { name: 'Send a request to Local Development' })).toBeVisible();
+  const form = page.locator('#public-request-form');
+  await form.getByLabel('Your name').fill('Jordan Client');
+  await form.getByLabel('Your email').fill('jordan@example.com');
+  await form.getByLabel('Company or client name').fill('Jordan Consulting');
+  await form.getByLabel('Request title').fill(title);
+  await form.getByLabel('Request details').fill('Please update our campaign landing page before next Friday.');
+  await form.getByLabel('Category Optional').selectOption('CHANGE_REQUEST');
+  await form.getByLabel('Urgency Optional').selectOption('HIGH');
+  await form.getByRole('button', { name: 'Send request' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Your request is in' })).toBeVisible();
+  await expect(page.locator('#confirmation-reference')).toHaveText(/^RF-[A-F0-9]{8}$/);
+  await expect(page.locator('#confirmation-status')).toHaveText('New');
+  await expect(page.locator('#confirmation-priority')).toHaveText('High');
+
+  await page.goto('/#workspace');
+  const ownerRequest = page.locator('.request-card').filter({ hasText: title });
+  await expect(ownerRequest).toContainText('Jordan Consulting');
+  await expect(ownerRequest).toContainText('requested Change Request');
+  await expect(page.locator('.card').filter({ hasText: title })).toContainText('HIGH');
 });
 
 test('creates a work item from the JavaScript dashboard', async ({ page }) => {

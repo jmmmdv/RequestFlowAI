@@ -69,6 +69,7 @@ class TenantIsolationSecurityTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"requesterName":"Public User","requesterEmail":"public@example.com",
+                                 "companyName":"Public Client",
                                  "title":"Support request","details":"The account page is not working for our team."}
                                 """))
                 .andExpect(status().isCreated())

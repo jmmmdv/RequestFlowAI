@@ -8,6 +8,7 @@ const requestBoard = document.querySelector('#request-board');
 const requestError = document.querySelector('#request-error');
 const queryParameters = new URLSearchParams(location.search);
 const intakeSlug = queryParameters.get('organization') || publicOrganizationSlug();
+document.querySelector('#share-form-link').href = `/public-request.html?organization=${encodeURIComponent(intakeSlug)}`;
 const demoMode = queryParameters.has('demo') ||
   (location.hostname.endsWith('.vercel.app') && !authenticationConfigured());
 const demoStateKey = 'requestflow-ai-demo-v1';
@@ -61,8 +62,9 @@ const initialDemoState = {
   ],
   requests: [{
     id: 'demo-request-1', requesterName: 'Morgan Client', requesterEmail: 'morgan@example.com',
+    companyName: 'Morgan Creative', requestedCategory: 'SUPPORT', requestedUrgency: 'HIGH',
     title: 'Booking form stops at payment', details: 'Customers cannot finish a booking after entering payment details.',
-    category: 'SUPPORT', suggestedPriority: 'HIGH', status: 'RECEIVED', workItemId: 1,
+    category: 'SUPPORT', suggestedPriority: 'HIGH', status: 'NEW', referenceNumber: 'RF-DEMO0001', workItemId: 1,
     internalSummary: 'Booking form stops at payment — Customers cannot finish a booking after entering payment details.',
     recommendedNextAction: 'Confirm the impact, reproduce the issue, and send the requester a status update.',
     createdAt: new Date().toISOString(),
@@ -81,15 +83,16 @@ function saveDemoState(state) {
   localStorage.removeItem(legacyDemoStateKey);
 }
 
-function demoClassification(title, details) {
+function demoClassification(title, details, requestedCategory, requestedUrgency) {
   const text = `${title} ${details}`.toLowerCase();
-  const category = /invoice|billing|payment|refund|charge/.test(text) ? 'BILLING'
+  const category = requestedCategory || (/invoice|billing|payment|refund|charge/.test(text) ? 'BILLING'
     : /bug|broken|error|outage|down|not working|cannot/.test(text) ? 'SUPPORT'
       : /quote|pricing|proposal|estimate|sales/.test(text) ? 'SALES'
-        : /change|update|add|build|design|campaign/.test(text) ? 'CHANGE_REQUEST' : 'GENERAL';
-  const suggestedPriority = /urgent|emergency|outage|down|critical/.test(text) ? 'CRITICAL'
+        : /change|update|add|build|design|campaign/.test(text) ? 'CHANGE_REQUEST' : 'GENERAL');
+  const urgencyPriorities = { LOW: 'LOW', NORMAL: 'MEDIUM', HIGH: 'HIGH', URGENT: 'CRITICAL' };
+  const suggestedPriority = urgencyPriorities[requestedUrgency] || (/urgent|emergency|outage|down|critical/.test(text) ? 'CRITICAL'
     : /asap|today|blocked|deadline/.test(text) ? 'HIGH'
-      : /no rush|when available|question/.test(text) ? 'LOW' : 'MEDIUM';
+      : /no rush|when available|question/.test(text) ? 'LOW' : 'MEDIUM');
   const actions = {
     SUPPORT: 'Confirm the impact, reproduce the issue, and send the requester a status update.',
     BILLING: 'Review the account and transaction history before replying with the resolution path.',
@@ -110,15 +113,18 @@ async function demoApi(path, options = {}) {
   }
   if (publicIntakeMatch && method === 'POST') {
     const request = JSON.parse(options.body);
-    const classification = demoClassification(request.title, request.details);
+    const classification = demoClassification(request.title, request.details, request.category, request.urgency);
     const workItemId = state.nextItemId++;
     state.workItems.push({ id: workItemId, title: request.title,
       description: classification.internalSummary, priority: classification.suggestedPriority, status: 'BACKLOG' });
-    const submission = { id: crypto.randomUUID(), ...request, ...classification, status: 'RECEIVED',
+    const id = crypto.randomUUID();
+    const submission = { id, ...request, requestedCategory: request.category, requestedUrgency: request.urgency,
+      ...classification, status: 'NEW', referenceNumber: `RF-${id.slice(0, 8).toUpperCase()}`,
       workItemId, createdAt: new Date().toISOString() };
     state.requests.unshift(submission);
     saveDemoState(state);
-    return { requestId: submission.id, category: classification.category,
+    return { requestId: submission.id, referenceNumber: submission.referenceNumber, status: submission.status,
+      category: classification.category,
       suggestedPriority: classification.suggestedPriority,
       recommendedNextAction: classification.recommendedNextAction,
       receivedAt: submission.createdAt, replayed: false };
@@ -277,14 +283,15 @@ document.querySelector('#intake-form').addEventListener('submit', async (event) 
     const receipt = await api(`/api/public/intake/${encodeURIComponent(intakeSlug)}`, {
       method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({
         requesterName: form.get('requesterName'), requesterEmail: form.get('requesterEmail'),
-        title: form.get('title'), details: form.get('details'),
+        companyName: form.get('companyName'), title: form.get('title'), details: form.get('details'),
+        category: form.get('category') || null, urgency: form.get('urgency') || null,
       }),
     });
     result.replaceChildren();
     const heading = document.createElement('strong');
     heading.textContent = `Request received · ${friendlyCategory(receipt.category)} · ${receipt.suggestedPriority} priority`;
     const summary = document.createElement('span');
-    summary.textContent = `${receipt.recommendedNextAction} Reference: ${receipt.requestId}`;
+    summary.textContent = `${receipt.recommendedNextAction} Reference: ${receipt.referenceNumber}`;
     result.append(heading, summary);
     result.hidden = false;
     formElement.reset();
@@ -528,7 +535,12 @@ function renderRequests(requests) {
     view.querySelector('.request-category').textContent = friendlyCategory(request.category);
     view.querySelector('time').textContent = new Date(request.createdAt).toLocaleString();
     view.querySelector('h3').textContent = request.title;
-    view.querySelector('.request-from').textContent = `${request.requesterName} · ${request.requesterEmail}`;
+    view.querySelector('.request-from').textContent = `${request.requesterName} · ${request.companyName} · ${request.requesterEmail}`;
+    const preferences = [request.referenceNumber,
+      request.requestedCategory ? `requested ${friendlyCategory(request.requestedCategory)}` : null,
+      request.requestedUrgency ? `${friendlyCategory(request.requestedUrgency)} urgency` : null]
+      .filter(Boolean).join(' · ');
+    view.querySelector('.request-preferences').textContent = preferences;
     view.querySelector('.request-summary').textContent = request.internalSummary;
     view.querySelector('.request-action').textContent = `Next: ${request.recommendedNextAction}`;
     const priority = view.querySelector('.priority');

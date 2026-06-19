@@ -6,7 +6,8 @@ request-management problem, then show the engineering evidence. Keep the scope h
 ## Before you start
 
 - [ ] Run `./mvnw spring-boot:run` or open the labeled demo URL.
-- [ ] Open the dashboard, `/swagger-ui.html`, `TenantIsolationSecurityTest`, and a terminal.
+- [ ] Open `/public-request.html?organization=local`, the dashboard, `/swagger-ui.html`,
+      `TenantIsolationSecurityTest`, and a terminal.
 - [ ] Optional: start Grafana with `docker compose --profile observability up -d`.
 - [ ] Reset browser-local demo data if you want a predictable walkthrough.
 
@@ -21,13 +22,20 @@ request-management problem, then show the engineering evidence. Keep the scope h
 > "What you are seeing is a working SaaS foundation and pilot-ready demo, not a claim that the
 > entire commercial product is launched."
 
-**0:30 — Public request journey (60s)**
+**0:30 — Public request journey (75s)**
 
-- Submit “Urgent: customers cannot access the booking form” through the public form.
-- Show the category, priority suggestion, reference, and recommended next action.
-- Scroll to the request inbox and the automatically created trackable work item.
+- Open the dedicated share link: `/public-request.html?organization=local`.
+- Enter a requester, company, and “Booking form is not working” request.
+- Choose **Support** and **Urgent**, then submit.
+- Show the `RF-XXXXXXXX` reference, **New** status, classification, and suggested priority.
+- Open the dashboard and show the same company/request in the inbox and its automatically created
+  trackable work item.
 
-**1:30 — Rule-based request assistance (75s)**
+> "A business shares one organization-specific form link. The slug is resolved to an active
+> organization on the server; the browser never submits or chooses a tenant ID. Category and
+> urgency are requester signals, not permission or approval boundaries."
+
+**1:45 — Rule-based request assistance (60s)**
 
 - Enter a routine request and choose **Create work plan**.
 - Show the bounded steps created on the board.
@@ -69,8 +77,9 @@ request-management problem, then show the engineering evidence. Keep the scope h
 - **Is this using AI?** The current assistant is rule-based. The repository proves the orchestration,
   safety, evaluation, and audit seam needed before an LLM is added.
 - **Can customers submit requests publicly?** Yes. The server resolves the organization from a
-  public slug, stores the original request, and creates tenant-owned work. Production rate limiting
-  and bot protection are still required before broadly publishing the link.
+  public slug, stores requester and company metadata, returns a reference, and creates tenant-owned
+  work. Production rate limiting, bot protection, retention controls, and optional rotating portal
+  tokens are still required before broadly publishing the link.
 - **How is tenant leakage prevented?** Verified identity supplies the tenant ID, repository queries
   require it, and automated tests cover list and direct-ID isolation.
 - **Are payments live?** Stripe Checkout and verified webhooks are implemented as a foundation.

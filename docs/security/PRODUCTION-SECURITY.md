@@ -31,6 +31,20 @@ tenant returns `404`, which avoids confirming that the row exists.
 | `POST /api/agent/runs/{id}/approve` | `ADMIN` |
 | `GET /api/agent/runs` | `ADMIN` |
 
+## Public request portal boundary
+
+Businesses share `/public-request.html?organization={organizationSlug}`. The slug is a public
+identifier, not a credential. The API validates its format, resolves only an active organization,
+and uses the organization's stored UUID for request and work-item writes. The form body has no
+tenant-ID field. Requester-selected category and urgency are classification hints only; they do not
+grant a role, approve automation, or bypass the organization's work-item quota.
+
+An active portal intentionally reveals the organization's display name. Unknown and inactive slugs
+return the same `404`. Before wide public distribution, place the endpoint behind rate limits and
+bot controls. Organizations needing a non-enumerable link should receive a separate random,
+rotatable portal token mapped to the organization server-side; that token lifecycle is not yet
+implemented.
+
 ## Configuration
 
 ```bash
@@ -52,5 +66,6 @@ execution, tenant A cannot list or fetch tenant B data, and agent audit rows pre
 tenant, and correlation ID attribution.
 
 This is the identity and isolation foundation—not the whole security program. Before public GA,
-add WAF/rate limiting and bot protection for intake, secret rotation, dependency and container
-scanning, backup restore drills, request-retention controls, and an external penetration test.
+add WAF/rate limiting and bot protection for intake, optional rotatable portal tokens, secret
+rotation, dependency and container scanning, backup restore drills, request-retention controls,
+and an external penetration test.

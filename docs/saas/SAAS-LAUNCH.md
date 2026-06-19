@@ -45,10 +45,12 @@ With all identity values present, the UI displays sign-in/sign-out and calls the
 access token. Without them, a `.vercel.app` deployment intentionally becomes the labeled local-data
 pilot demo. Add `?demo` to force demo mode while diagnosing production identity.
 
-Public intake uses `/api/public/intake/{organizationSlug}` and never accepts a tenant UUID from the
-browser. Before broadly publishing a portal, add WAF/rate limiting, bot protection, monitoring,
-privacy terms, and a retention/deletion policy. These production abuse controls are not faked by
-the local demo.
+The shareable page is `/public-request.html?organization={organizationSlug}`. Public intake uses
+`/api/public/intake/{organizationSlug}` and never accepts a tenant UUID from the browser. The slug
+is a public lookup key rather than a secret; only an active organization resolves, and all writes
+use the server-stored tenant UUID. Before broadly publishing a portal, add WAF/rate limiting, bot
+protection, monitoring, privacy terms, a retention/deletion policy, and—where link privacy matters—
+a random rotatable portal token. These production abuse controls are not faked by the local demo.
 
 ## Invitation boundary
 

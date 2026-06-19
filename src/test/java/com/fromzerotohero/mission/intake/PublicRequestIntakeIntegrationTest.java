@@ -55,14 +55,19 @@ class PublicRequestIntakeIntegrationTest {
                                 {
                                   "requesterName":"Taylor Client",
                                   "requesterEmail":"Taylor@Example.com",
+                                  "companyName":"Taylor Studio",
                                   "title":"Booking form is down",
-                                  "details":"Urgent: customers cannot access the booking form today."
+                                  "details":"Customers cannot access the booking form today.",
+                                  "category":"SUPPORT",
+                                  "urgency":"URGENT"
                                 }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.matchesPattern("/api/requests/.+")))
                 .andExpect(jsonPath("$.category").value("SUPPORT"))
                 .andExpect(jsonPath("$.suggestedPriority").value("CRITICAL"))
+                .andExpect(jsonPath("$.referenceNumber", org.hamcrest.Matchers.matchesPattern("RF-[A-F0-9]{8}")))
+                .andExpect(jsonPath("$.status").value("NEW"))
                 .andExpect(jsonPath("$.recommendedNextAction").isNotEmpty())
                 .andExpect(jsonPath("$.internalSummary").doesNotExist())
                 .andExpect(jsonPath("$.workItemId").doesNotExist())
@@ -71,6 +76,11 @@ class PublicRequestIntakeIntegrationTest {
         assertThat(submissions.findAllByTenantIdOrderByCreatedAtDesc(TENANT)).singleElement()
                 .satisfies(request -> {
                     assertThat(request.getRequesterEmail()).isEqualTo("taylor@example.com");
+                    assertThat(request.getCompanyName()).isEqualTo("Taylor Studio");
+                    assertThat(request.getRequestedCategory()).isEqualTo(RequestCategory.SUPPORT);
+                    assertThat(request.getRequestedUrgency()).isEqualTo(RequestUrgency.URGENT);
+                    assertThat(request.getStatus()).isEqualTo("NEW");
+                    assertThat(request.getReferenceNumber()).startsWith("RF-");
                     assertThat(request.getTenantId()).isEqualTo(TENANT);
                     assertThat(request.getWorkItemId()).isNotNull();
                 });
@@ -81,7 +91,7 @@ class PublicRequestIntakeIntegrationTest {
     @Test
     void idempotencyReplayDoesNotDuplicateRequestOrWorkItem() throws Exception {
         String body = """
-                {"requesterName":"Jamie","requesterEmail":"jamie@example.com",
+                {"requesterName":"Jamie","requesterEmail":"jamie@example.com","companyName":"Northwind",
                  "title":"Please update our logo","details":"Please update the website logo before next week."}
                 """;
         mvc.perform(post("/api/public/intake/local").header("Idempotency-Key", "same-request-001")
@@ -99,7 +109,7 @@ class PublicRequestIntakeIntegrationTest {
     void authenticatedWorkspaceCanListOriginalRequests() throws Exception {
         mvc.perform(post("/api/public/intake/local").contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"requesterName":"Avery","requesterEmail":"avery@example.com",
+                                {"requesterName":"Avery","requesterEmail":"avery@example.com","companyName":"Avery & Co",
                                  "title":"Invoice question","details":"Please explain the latest invoice charge."}
                                 """))
                 .andExpect(status().isCreated());
@@ -107,6 +117,8 @@ class PublicRequestIntakeIntegrationTest {
         mvc.perform(get("/api/requests"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].requesterName").value("Avery"))
+                .andExpect(jsonPath("$[0].companyName").value("Avery & Co"))
+                .andExpect(jsonPath("$[0].referenceNumber", org.hamcrest.Matchers.startsWith("RF-")))
                 .andExpect(jsonPath("$[0].category").value("BILLING"));
     }
 
@@ -116,7 +128,24 @@ class PublicRequestIntakeIntegrationTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Request portal was not found"));
         mvc.perform(post("/api/public/intake/local").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"requesterName\":\"\",\"requesterEmail\":\"bad\",\"title\":\"\",\"details\":\"short\"}"))
+                        .content("{\"requesterName\":\"\",\"requesterEmail\":\"bad\",\"companyName\":\"\",\"title\":\"\",\"details\":\"short\"}"))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(post("/api/public/intake/local").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"requesterName":"Valid Name","requesterEmail":"not-an-email",
+                                 "companyName":"Client Company","title":"A valid request title",
+                                 "details":"This request contains enough detail to pass length checks."}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(post("/api/public/intake/local").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"requesterName":"Valid Name","requesterEmail":"valid@example.com",
+                                 "companyName":"Client Company","title":"A valid request title",
+                                 "details":"This request contains enough detail to pass length checks.",
+                                 "urgency":"MAKE_IT_HAPPEN"}
+                                """))
                 .andExpect(status().isBadRequest());
     }
 }

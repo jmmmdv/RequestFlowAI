@@ -51,7 +51,7 @@ validation remain before a commercial launch claim would be honest.
 | Free/Pro/Business limits | Enforced work-item and monthly planning quotas | Implemented and tested |
 | Stripe billing foundation | Checkout creation and signature-verified webhook synchronization | Test-ready; production configuration required |
 | Demo mode | Browser-local sample organization and disposable data | Implemented and clearly labeled |
-| Public request form | Slug-resolved tenant portal, original-request storage, idempotent submission | Implemented and tested |
+| Public request form | Dedicated shareable page, slug-resolved portal, requester metadata, reference, idempotent submission | Implemented and tested |
 | Request-specific classification | Rule-based category, summary, priority suggestion, and next action | Implemented foundation; not an LLM |
 | Customer-facing landing and pricing | Responsive value proposition, plan limits, and calls to action | Implemented |
 | Start Free onboarding | Self-serve customer journey tied to production identity | Foundation exists; live drill pending |
@@ -85,7 +85,8 @@ Open:
 
 - Landing page: [http://localhost:8080](http://localhost:8080)
 - Interactive dashboard demo: [http://localhost:8080/#workspace](http://localhost:8080/#workspace)
-- Public request form: [http://localhost:8080/#request-intake](http://localhost:8080/#request-intake)
+- Shareable public request form: [http://localhost:8080/public-request.html?organization=local](http://localhost:8080/public-request.html?organization=local)
+- Embedded landing-page form: [http://localhost:8080/#request-intake](http://localhost:8080/#request-intake)
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - OpenAPI JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
 
@@ -93,6 +94,25 @@ The landing page and dashboard share one responsive experience: marketing sectio
 problem, target teams, five-step request flow, benefits, and plans; **View demo** jumps to the
 working dashboard without removing any existing functionality. In local development, sample data
 is disposable and the public request form creates both an inbox entry and a trackable work item.
+
+### Share a public request form
+
+A business shares this URL, replacing `local` with its organization slug:
+
+```text
+https://your-requestflow-host/public-request.html?organization=your-company-slug
+```
+
+The slug identifies a public portal; it is not treated as a secret or accepted as a tenant ID.
+The API validates the slug format, resolves an active organization on the server, and writes the
+request and generated work item with that organization's stored UUID. The browser never submits a
+tenant ID. Unknown or inactive slugs return `404` without exposing private workspace data.
+
+The requester supplies their name, email, company/client name, title, and details. Category and
+urgency are optional signals used for the suggested classification and priority; they never grant
+permissions or approve automated work. A successful submission receives a `RF-XXXXXXXX` reference
+and `NEW` status. Signed-in workspace users see the original request, requester metadata, optional
+signals, suggested priority, next action, and linked work item in the request inbox.
 
 The default Vercel deployment is an explicitly labeled browser-local demo with disposable data.
 When its documented public browser configuration is present, the same frontend uses Cognito
@@ -104,7 +124,7 @@ curl http://localhost:8080/api/work-items
 curl -X POST http://localhost:8080/api/public/intake/local \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: public-request-001' \
-  -d '{"requesterName":"Alex","requesterEmail":"alex@example.com","title":"Booking form is down","details":"Urgent: customers cannot complete a booking today."}'
+  -d '{"requesterName":"Alex","requesterEmail":"alex@example.com","companyName":"Alex Services","title":"Booking form is down","details":"Customers cannot complete a booking today.","category":"SUPPORT","urgency":"URGENT"}'
 curl -X POST http://localhost:8080/api/agent/plan \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: demo-request-001' \
@@ -152,7 +172,7 @@ documented in the launch guide where available.
 | Claim | Evidence in the repository |
 |---|---|
 | Tenant data cannot cross organization boundaries | `TenantIsolationSecurityTest` proves list and direct-ID isolation |
-| Public intake cannot choose an arbitrary tenant ID | Organization slug resolves server-side; security tests prove ownership |
+| Public intake cannot choose an arbitrary tenant ID | Active organization slug resolves server-side; request bodies contain no tenant authority |
 | Retried public submissions do not duplicate work | Tenant-scoped idempotency constraint and integration test |
 | API responses agree with persisted rows | `ApiDatabaseConsistencyTest` compares HTTP JSON with raw SQL |
 | Migrations work on PostgreSQL | `PostgreSqlApiIntegrationTest` runs Flyway and persistence in Testcontainers |
@@ -197,7 +217,7 @@ planning assistants are deterministic rules, not an external LLM.
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/api/public/intake/{organizationSlug}` | Resolve an active public request portal |
-| `POST` | `/api/public/intake/{organizationSlug}` | Store and triage an idempotent public request |
+| `POST` | `/api/public/intake/{organizationSlug}` | Validate, store, classify, and create work for an idempotent public request |
 | `GET` | `/api/requests` | List original requests for the authenticated tenant |
 | `GET` | `/api/requests/{requestId}` | Read one original request inside the authenticated tenant boundary |
 | `GET` | `/api/work-items` | Tenant-scoped work-item collection |
@@ -222,7 +242,8 @@ planning assistants are deterministic rules, not an external LLM.
 
 - [x] Work-item CRUD and status tracking
 - [x] Customer-facing landing page, pricing, and Start Free entry point
-- [x] Public tenant-safe request intake with original-request storage and idempotency
+- [x] Dedicated public request page with server-resolved organization slug and confirmation reference
+- [x] Original-request storage, requester/company metadata, optional category/urgency, and idempotency
 - [x] Rule-based category, priority, summary, and recommended next action
 - [x] Rule-based planning, priority keywords, human approval, idempotency, and audit trail
 - [x] Organizations, memberships, roles, and expiring invitations
@@ -235,7 +256,7 @@ planning assistants are deterministic rules, not an external LLM.
 
 ### Required before a production-backed pilot
 
-- [ ] Add production rate limiting, bot protection, and request-retention controls for public intake
+- [ ] Add production rate limiting, bot protection, request-retention controls, and optional unguessable portal tokens
 - [ ] Complete and test the production-backed Start Free onboarding journey
 - [ ] Run and record Cognito signup, invitation transfer, and Stripe test Checkout drills
 - [ ] Run and record the AWS restore drill
@@ -247,7 +268,7 @@ planning assistants are deterministic rules, not an external LLM.
 | Area | Where it lives |
 |---|---|
 | Java and Spring REST | `src/main/java/.../workitem`, validation, HATEOAS, and controller tests |
-| Public intake and triage | `intake/`, migration V5, classifier tests, and public integration tests |
+| Public intake and triage | `public-request.html`, `intake/`, migrations V5–V6, classifier tests, and public integration tests |
 | Multi-tenancy and security | `security/`, repository methods, `TenantIsolationSecurityTest` |
 | SaaS control plane | `saas/`, Flyway migrations, and `SaasProductIntegrationTest` |
 | Automation safety | `agent/`, approval policy, idempotency, audit, evaluation dataset |

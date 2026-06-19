@@ -20,8 +20,11 @@ public class RequestSubmission {
     @JsonIgnore @Column(nullable = false, updatable = false, length = 80) private String idempotencyKey;
     @Column(nullable = false, length = 120) private String requesterName;
     @Column(nullable = false, length = 254) private String requesterEmail;
+    @Column(nullable = false, length = 160) private String companyName;
     @Column(nullable = false, length = 120) private String title;
     @Column(nullable = false, length = 2000) private String details;
+    @Enumerated(EnumType.STRING) @Column(length = 40) private RequestCategory requestedCategory;
+    @Enumerated(EnumType.STRING) @Column(length = 20) private RequestUrgency requestedUrgency;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 40) private RequestCategory category;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20) private Priority suggestedPriority;
     @Column(nullable = false, length = 500) private String internalSummary;
@@ -33,20 +36,24 @@ public class RequestSubmission {
     protected RequestSubmission() {}
 
     public RequestSubmission(UUID tenantId, String idempotencyKey, String requesterName,
-            String requesterEmail, String title, String details,
+            String requesterEmail, String companyName, String title, String details,
+            RequestCategory requestedCategory, RequestUrgency requestedUrgency,
             RuleBasedRequestClassifier.Classification classification, Long workItemId) {
         this.id = UUID.randomUUID();
         this.tenantId = tenantId;
         this.idempotencyKey = idempotencyKey;
         this.requesterName = requesterName;
         this.requesterEmail = requesterEmail;
+        this.companyName = companyName;
         this.title = title;
         this.details = details;
+        this.requestedCategory = requestedCategory;
+        this.requestedUrgency = requestedUrgency;
         this.category = classification.category();
         this.suggestedPriority = classification.priority();
         this.internalSummary = classification.internalSummary();
         this.recommendedNextAction = classification.recommendedNextAction();
-        this.status = "RECEIVED";
+        this.status = "NEW";
         this.workItemId = workItemId;
     }
 
@@ -56,8 +63,11 @@ public class RequestSubmission {
     public UUID getTenantId() { return tenantId; }
     public String getRequesterName() { return requesterName; }
     public String getRequesterEmail() { return requesterEmail; }
+    public String getCompanyName() { return companyName; }
     public String getTitle() { return title; }
     public String getDetails() { return details; }
+    public RequestCategory getRequestedCategory() { return requestedCategory; }
+    public RequestUrgency getRequestedUrgency() { return requestedUrgency; }
     public RequestCategory getCategory() { return category; }
     public Priority getSuggestedPriority() { return suggestedPriority; }
     public String getInternalSummary() { return internalSummary; }
@@ -65,4 +75,5 @@ public class RequestSubmission {
     public String getStatus() { return status; }
     public Long getWorkItemId() { return workItemId; }
     public Instant getCreatedAt() { return createdAt; }
+    public String getReferenceNumber() { return "RF-" + id.toString().substring(0, 8).toUpperCase(); }
 }

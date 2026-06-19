@@ -30,4 +30,14 @@ class RuleBasedRequestClassifierTest {
         assertThat(classifier.classify("General question", "No rush, information only please.").priority())
                 .isEqualTo(Priority.LOW);
     }
+
+    @Test
+    void treatsRequesterSelectionsAsClassificationInputs() {
+        var result = classifier.classify("Please help", "This request has enough detail.",
+                RequestCategory.BILLING, RequestUrgency.HIGH);
+
+        assertThat(result.category()).isEqualTo(RequestCategory.BILLING);
+        assertThat(result.priority()).isEqualTo(Priority.HIGH);
+        assertThat(result.recommendedNextAction()).contains("account and transaction history");
+    }
 }
