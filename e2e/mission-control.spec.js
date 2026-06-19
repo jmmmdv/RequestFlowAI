@@ -3,10 +3,25 @@ import { expect, test } from '@playwright/test';
 test('shows the customer journey and honest pricing', async ({ page }) => {
   await page.goto('/');
 
+  await expect(page).toHaveTitle('RequestFlow AI — Turn requests into trackable work');
+  await expect(page.getByRole('heading', { name: 'Never lose another customer request' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'One simple home for incoming work' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'From scattered messages to clear next steps' })).toBeVisible();
+  await expect(page.locator('.workflow-grid article')).toHaveCount(5);
+  await expect(page.locator('#benefits')).toContainText('Fewer lost requests');
+  await expect(page.locator('#benefits')).toContainText('Simple approvals');
   await expect(page.locator('#pricing')).toContainText('FREE');
   await expect(page.locator('#pricing')).toContainText('Pilot pricing coming soon');
   await expect(page.getByRole('heading', { name: /Send a request to/ })).toContainText('Local Development');
+});
+
+test('keeps the working dashboard accessible from the landing page', async ({ page }) => {
+  await page.goto('/');
+
+  await page.locator('header').getByRole('link', { name: 'View demo' }).click();
+  await expect(page).toHaveURL(/#workspace$/);
+  await expect(page.getByRole('heading', { name: 'Keep every request moving' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Trackable work' })).toBeVisible();
 });
 
 test('public intake classifies a request and adds it to the workspace', async ({ page }) => {
@@ -27,7 +42,7 @@ test('public intake classifies a request and adds it to the workspace', async ({
 
 test('creates a work item from the JavaScript dashboard', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'RequestFlow AI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Never lose another customer request' })).toBeVisible();
 
   await page.getByLabel('Title').fill('Learn Playwright locators');
   await page.getByLabel('Priority').selectOption('HIGH');

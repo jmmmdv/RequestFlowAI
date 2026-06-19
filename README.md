@@ -11,7 +11,7 @@ work moves forward.
 [![CI](https://github.com/jmmmdv/FromZeroToHero/actions/workflows/ci.yml/badge.svg)](https://github.com/jmmmdv/FromZeroToHero/actions/workflows/ci.yml)
 ![Coverage gate](https://img.shields.io/badge/coverage_gate-80%25-brightgreen)
 
-![RequestFlow AI dashboard](docs/assets/mission-control-dashboard.jpg)
+![RequestFlow AI landing page](docs/assets/requestflow-ai-landing.jpg)
 
 > **Status:** working SaaS foundation and pilot-ready demo, not a launched commercial service.
 > Public request intake, rule-based triage, work management, tenant isolation, team, quota, audit,
@@ -83,9 +83,16 @@ needed for the real PostgreSQL integration test.
 
 Open:
 
-- Dashboard: [http://localhost:8080](http://localhost:8080)
+- Landing page: [http://localhost:8080](http://localhost:8080)
+- Interactive dashboard demo: [http://localhost:8080/#workspace](http://localhost:8080/#workspace)
+- Public request form: [http://localhost:8080/#request-intake](http://localhost:8080/#request-intake)
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - OpenAPI JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+The landing page and dashboard share one responsive experience: marketing sections explain the
+problem, target teams, five-step request flow, benefits, and plans; **View demo** jumps to the
+working dashboard without removing any existing functionality. In local development, sample data
+is disposable and the public request form creates both an inbox entry and a trackable work item.
 
 The default Vercel deployment is an explicitly labeled browser-local demo with disposable data.
 When its documented public browser configuration is present, the same frontend uses Cognito

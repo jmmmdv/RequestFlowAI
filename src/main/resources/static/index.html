@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RequestFlow AI</title>
+  <meta name="description" content="Collect customer and internal requests in one place, organize priorities, and turn every request into trackable work with RequestFlow AI.">
+  <meta name="theme-color" content="#08111f">
+  <title>RequestFlow AI — Turn requests into trackable work</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -11,50 +13,101 @@
     <nav class="account-bar" aria-label="Account">
       <a class="nav-brand" href="#top">RequestFlow AI</a>
       <div class="nav-links">
+        <a href="#for-teams">Who it is for</a>
         <a href="#how-it-works">How it works</a>
         <a href="#pricing">Pricing</a>
-        <a href="#request-intake">Send a request</a>
+        <a href="#workspace">Dashboard</a>
         <span id="account-status">Local development</span>
         <button id="login" class="secondary" hidden>Sign in</button>
         <button id="logout" class="secondary" hidden>Sign out</button>
       </div>
     </nav>
     <div id="top"></div>
-    <p class="eyebrow hero-kicker">REQUESTS IN. CLEAR WORK OUT.</p>
-    <h1>RequestFlow AI</h1>
-    <p>Collect requests in one place, know what is urgent, and turn every request into trackable work.</p>
-    <div class="hero-actions">
-      <a class="button-link" href="#request-intake">Send a request</a>
-      <button id="start-free" class="secondary" type="button">Start free</button>
+    <div class="hero-layout">
+      <div class="hero-copy">
+        <p class="eyebrow hero-kicker">REQUESTS IN. CLEAR WORK OUT.</p>
+        <h1>Never lose another customer request</h1>
+        <p class="hero-description">Bring requests from email, WhatsApp, texts, calls, and forms into one organized workflow. Know what needs attention and keep every job moving.</p>
+        <div class="hero-actions">
+          <button id="start-free" type="button">Start free</button>
+          <a class="button-link secondary-link" href="#workspace">View demo</a>
+        </div>
+        <p class="hero-note">Free to try · No payment details needed for the local demo</p>
+      </div>
+      <aside class="hero-preview" aria-label="Example workflow preview">
+        <div class="preview-heading"><span>Today’s request flow</span><span class="live-dot">Organized</span></div>
+        <article class="preview-request">
+          <div><span class="preview-channel">WEB FORM</span><strong>Booking page is not working</strong></div>
+          <span class="preview-priority">URGENT</span>
+        </article>
+        <div class="preview-path" aria-hidden="true"><span>Received</span><i></i><span>Ready</span><i></i><span>In progress</span></div>
+        <article class="preview-request">
+          <div><span class="preview-channel">EMAIL</span><strong>Update our summer campaign</strong></div>
+          <span class="preview-status">READY</span>
+        </article>
+        <p class="preview-audit">Important decisions and approvals stay recorded.</p>
+      </aside>
     </div>
     <p id="demo-notice" class="demo-notice" hidden>
       Pilot demo · changes stay in this browser. Production identity, data, and billing require configuration.
     </p>
   </header>
   <main>
+    <section id="for-teams" class="marketing-section">
+      <div class="marketing-heading">
+        <p class="eyebrow">BUILT FOR BUSY SERVICE TEAMS</p>
+        <h2>One simple home for incoming work</h2>
+        <p class="description">RequestFlow AI is for teams that need a clear request process without the cost or complexity of an enterprise system.</p>
+      </div>
+      <div class="audience-grid">
+        <article><h3>Small businesses</h3><p>Keep customer questions, fixes, and follow-ups from slipping through the cracks.</p></article>
+        <article><h3>Agencies</h3><p>Turn client changes and campaign requests into visible, trackable work.</p></article>
+        <article><h3>Consultants</h3><p>Collect what clients need and keep the next action clear from start to finish.</p></article>
+        <article><h3>IT &amp; support teams</h3><p>See urgent issues sooner and give every request a clear status.</p></article>
+      </div>
+    </section>
+
     <section id="how-it-works" class="marketing-section">
       <div class="marketing-heading">
         <p class="eyebrow">A SIMPLE REQUEST FLOW</p>
         <h2>From scattered messages to clear next steps</h2>
         <p class="description">Give customers and teammates one place to ask. RequestFlow AI keeps the original request, suggests what matters, and creates work your team can track.</p>
       </div>
-      <div class="value-grid">
-        <article><span>01</span><h3>Collect requests</h3><p>Use one shareable form instead of chasing email, calls, and messages.</p></article>
-        <article><span>02</span><h3>Know what is urgent</h3><p>Get a rule-based category, priority suggestion, summary, and recommended next action.</p></article>
-        <article><span>03</span><h3>Track the work</h3><p>Turn every submission into a visible work item with an owner-ready status.</p></article>
+      <div class="workflow-grid">
+        <article><span>01</span><h3>Collect</h3><p>Give customers and teammates one place to send a request.</p></article>
+        <article><span>02</span><h3>Organize</h3><p>Suggest a category, priority, short summary, and next action.</p></article>
+        <article><span>03</span><h3>Create work</h3><p>Turn the request into a work item your team can act on.</p></article>
+        <article><span>04</span><h3>Track status</h3><p>Move work from backlog to ready, in progress, and done.</p></article>
+        <article><span>05</span><h3>Review actions</h3><p>Keep important decisions and approvals in a simple activity trail.</p></article>
       </div>
+    </section>
+
+    <section id="benefits" class="panel benefits-section">
+      <div>
+        <p class="eyebrow">LESS CHASING. MORE CLARITY.</p>
+        <h2>Give your team a calmer way to work</h2>
+        <p class="description">Everyone can see what arrived, what matters, and what happens next—without searching across five different places.</p>
+        <a class="text-link" href="#request-intake">Try the request form →</a>
+      </div>
+      <ul class="benefit-list">
+        <li><strong>Fewer lost requests</strong><span>Keep incoming work together instead of scattered across inboxes and chats.</span></li>
+        <li><strong>Faster response</strong><span>Bring urgent requests to the surface and make the next action clear.</span></li>
+        <li><strong>Organized teamwork</strong><span>Turn every request into work the whole team can follow.</span></li>
+        <li><strong>Clear status tracking</strong><span>See what is waiting, underway, or finished at a glance.</span></li>
+        <li><strong>Simple approvals</strong><span>Pause important actions for review and keep an activity record.</span></li>
+      </ul>
     </section>
 
     <section id="pricing" class="marketing-section">
       <div class="marketing-heading">
         <p class="eyebrow">START SMALL. GROW WHEN READY.</p>
         <h2>Simple plans for small teams</h2>
-        <p class="description">The limits below are enforced by the application. Stripe Checkout is available when production billing is configured.</p>
+        <p class="description">Start with the essentials, then upgrade when your request volume and team grow. Paid checkout becomes available when production billing is connected.</p>
       </div>
       <div class="pricing-grid">
-        <article class="price-card"><p class="eyebrow">FREE</p><h3>$0 <span>/ month</span></h3><p>For trying the workflow.</p><ul><li>25 work items</li><li>10 assisted plans monthly</li><li>Team workspace</li></ul><a class="button-link secondary-link" href="#request-intake">Start free</a></article>
-        <article class="price-card featured"><p class="eyebrow">PRO</p><h3>Pilot pricing <span>coming soon</span></h3><p>For active service teams.</p><ul><li>1,000 work items</li><li>500 assisted plans monthly</li><li>Team invitations and billing foundation</li></ul><a class="button-link" href="#workspace">View workspace</a></article>
-        <article class="price-card"><p class="eyebrow">BUSINESS</p><h3>Contact us</h3><p>For higher-volume teams.</p><ul><li>10,000 work items</li><li>5,000 assisted plans monthly</li><li>Production configuration support</li></ul><a class="button-link secondary-link" href="#request-intake">Join the pilot</a></article>
+        <article class="price-card"><p class="eyebrow">FREE</p><h3>$0 <span>/ month</span></h3><p>For testing a better request workflow.</p><ul><li>25 work items</li><li>10 assisted plans each month</li><li>One organized workspace</li></ul><a class="button-link secondary-link" href="#request-intake">Start free</a></article>
+        <article class="price-card featured"><p class="eyebrow">PRO</p><h3>Pilot pricing <span>coming soon</span></h3><p>For active service businesses and agencies.</p><ul><li>1,000 work items</li><li>500 assisted plans each month</li><li>More room for a growing workflow</li></ul><a class="button-link" href="#workspace">View demo</a></article>
+        <article class="price-card"><p class="eyebrow">BUSINESS</p><h3>Contact us</h3><p>For higher-volume teams that work together.</p><ul><li>10,000 work items</li><li>5,000 assisted plans each month</li><li>Team-focused production setup</li></ul><a class="button-link secondary-link" href="#request-intake">Join the pilot</a></article>
       </div>
     </section>
 
@@ -213,6 +266,11 @@
       <div id="error" class="error" role="alert"></div>
       <div id="board" class="board" aria-live="polite"></div>
     </section>
+
+    <footer>
+      <div><strong>RequestFlow AI</strong><p>A pilot-ready SaaS MVP foundation for small service teams.</p></div>
+      <div><a href="#top">Back to top</a><a href="#pricing">Pricing</a><a href="#workspace">View demo</a></div>
+    </footer>
   </main>
   <template id="card-template">
     <article class="card">
