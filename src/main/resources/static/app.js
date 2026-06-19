@@ -2,8 +2,102 @@ const board = document.querySelector('#board');
 const errorBox = document.querySelector('#error');
 const runBoard = document.querySelector('#run-board');
 const runError = document.querySelector('#run-error');
+const demoMode = location.hostname.endsWith('.vercel.app') || new URLSearchParams(location.search).has('demo');
+const demoStateKey = 'mission-control-demo-v1';
+
+const initialDemoState = {
+  nextItemId: 4,
+  nextRunId: 2,
+  workItems: [
+    { id: 1, title: 'Protect every tenant boundary', description: 'JWT roles and tenant-scoped persistence', priority: 'CRITICAL', status: 'DONE' },
+    { id: 2, title: 'Trace the planning agent', description: 'OpenTelemetry, Prometheus, Tempo, and Grafana', priority: 'HIGH', status: 'IN_PROGRESS' },
+    { id: 3, title: 'Practice the restore runbook', description: 'Validate the RDS recovery objective', priority: 'MEDIUM', status: 'READY' },
+  ],
+  runs: [{
+    id: 1,
+    goal: 'Prepare a safe production deployment',
+    classification: 'HIGH_IMPACT',
+    outcome: 'PENDING_APPROVAL',
+    toolBudget: 3,
+    createdWorkItems: 0,
+    userId: 'portfolio-viewer',
+    correlationId: 'demo-correlation-001',
+    createdAt: new Date().toISOString(),
+  }],
+};
+
+function readDemoState() {
+  const saved = localStorage.getItem(demoStateKey);
+  return saved ? JSON.parse(saved) : structuredClone(initialDemoState);
+}
+
+function saveDemoState(state) {
+  localStorage.setItem(demoStateKey, JSON.stringify(state));
+}
+
+async function demoApi(path, options = {}) {
+  const method = options.method ?? 'GET';
+  const state = readDemoState();
+  if (path === '/api/work-items' && method === 'GET') {
+    return { _embedded: { workItemList: state.workItems } };
+  }
+  if (path === '/api/work-items' && method === 'POST') {
+    const request = JSON.parse(options.body);
+    const item = { id: state.nextItemId++, ...request };
+    state.workItems.push(item);
+    saveDemoState(state);
+    return item;
+  }
+  const statusMatch = path.match(/^\/api\/work-items\/(\d+)\/status$/);
+  if (statusMatch && method === 'PATCH') {
+    const item = state.workItems.find(({ id }) => id === Number(statusMatch[1]));
+    if (item) item.status = JSON.parse(options.body).status;
+    saveDemoState(state);
+    return item;
+  }
+  const itemMatch = path.match(/^\/api\/work-items\/(\d+)$/);
+  if (itemMatch && method === 'DELETE') {
+    state.workItems = state.workItems.filter(({ id }) => id !== Number(itemMatch[1]));
+    saveDemoState(state);
+    return null;
+  }
+  if (path === '/api/agent/runs' && method === 'GET') return state.runs;
+  if (path === '/api/agent/plan' && method === 'POST') {
+    const request = JSON.parse(options.body);
+    const highImpact = /deploy|production|delete|security|database/i.test(request.goal);
+    const createdWorkItemIds = [];
+    const outcome = highImpact ? 'PENDING_APPROVAL' : request.createWorkItems ? 'EXECUTED' : 'DRY_RUN';
+    if (outcome === 'EXECUTED') {
+      const item = { id: state.nextItemId++, title: request.goal, description: 'Created safely by the portfolio demo agent', priority: 'MEDIUM', status: 'BACKLOG' };
+      state.workItems.push(item);
+      createdWorkItemIds.push(item.id);
+    }
+    const run = {
+      id: state.nextRunId++, goal: request.goal, classification: highImpact ? 'HIGH_IMPACT' : 'ROUTINE',
+      outcome, toolBudget: request.toolBudget, createdWorkItems: createdWorkItemIds.length,
+      userId: 'portfolio-viewer', correlationId: crypto.randomUUID(), createdAt: new Date().toISOString(),
+    };
+    state.runs.unshift(run);
+    saveDemoState(state);
+    return { ...run, createdWorkItemIds };
+  }
+  const approvalMatch = path.match(/^\/api\/agent\/runs\/(\d+)\/approve$/);
+  if (approvalMatch && method === 'POST') {
+    const run = state.runs.find(({ id }) => id === Number(approvalMatch[1]));
+    const item = { id: state.nextItemId++, title: run.goal, description: 'Created after explicit human approval', priority: 'HIGH', status: 'BACKLOG' };
+    state.workItems.push(item);
+    run.outcome = 'EXECUTED';
+    run.createdWorkItems = 1;
+    saveDemoState(state);
+    return { ...run, createdWorkItemIds: [item.id] };
+  }
+  throw new Error('This action is unavailable in the portfolio demo.');
+}
+
+if (demoMode) document.querySelector('#demo-notice').hidden = false;
 
 async function api(path, options = {}) {
+  if (demoMode) return demoApi(path, options);
   const { headers = {}, ...requestOptions } = options;
   const response = await fetch(path, {
     ...requestOptions,

@@ -41,6 +41,11 @@ Open [http://localhost:8080](http://localhost:8080). In another terminal:
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - OpenAPI JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
 
+The Vercel deployment is an explicitly labeled, browser-local portfolio preview. It serves the
+same UI with disposable demo data so reviewers can explore it without credentials. The real Java
+API, PostgreSQL database, authentication, and observability stack deploy through AWS App Runner.
+`vercel.json` selects the Spring static-resource directory and prevents incorrect Next.js detection.
+
 ```bash
 curl http://localhost:8080/api/work-items
 curl -X POST http://localhost:8080/api/agent/plan \

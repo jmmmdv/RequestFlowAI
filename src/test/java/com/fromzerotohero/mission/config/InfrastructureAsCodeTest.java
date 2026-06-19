@@ -46,4 +46,16 @@ class InfrastructureAsCodeTest {
         assertThat(Path.of("docs/operations/INCIDENT-RUNBOOK.md")).exists();
         assertThat(Path.of("docs/operations/RESTORE-DRILL.md")).exists();
     }
+
+    @Test
+    void vercelPublishesAnExplicitStaticPortfolioPreview() throws Exception {
+        String configuration = Files.readString(Path.of("vercel.json"));
+
+        assertThat(configuration)
+                .contains("\"framework\": null")
+                .contains("\"outputDirectory\": \"src/main/resources/static\"");
+        assertThat(Files.readString(Path.of("src/main/resources/static/app.js")))
+                .contains("location.hostname.endsWith('.vercel.app')")
+                .contains("mission-control-demo-v1");
+    }
 }
