@@ -44,6 +44,14 @@
         <button data-plan="BUSINESS" class="upgrade secondary">Business plan</button>
         <span id="plan-note" class="plan-note" hidden></span>
       </div>
+      <form id="accept-form" class="accept-form">
+        <label>Have an invitation? Paste your token
+          <input name="token" minlength="32" maxlength="100" autocomplete="off" spellcheck="false"
+                 placeholder="Invitation token">
+        </label>
+        <button type="submit" class="secondary">Accept invitation</button>
+      </form>
+      <p id="accept-result" class="result" aria-live="polite"></p>
     </section>
     <section id="team-panel" class="panel saas-panel" hidden>
       <div class="section-heading">

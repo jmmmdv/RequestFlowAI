@@ -44,7 +44,7 @@ const initialDemoState = {
     { id: 'demo-member-2', tenantId: 'demo', userId: 'demo-engineer', email: 'engineer@example.com', role: 'MEMBER', joinedAt: new Date().toISOString() },
   ],
   invitations: [
-    { id: 'demo-invite-1', tenantId: 'demo', email: 'teammate@example.com', role: 'VIEWER', invitedBy: 'portfolio-viewer', expiresAt: new Date(Date.now() + 6 * 86400000).toISOString(), acceptedAt: null, createdAt: new Date().toISOString() },
+    { id: 'demo-invite-1', tenantId: 'demo', email: 'teammate@example.com', role: 'VIEWER', invitedBy: 'portfolio-viewer', expiresAt: new Date(Date.now() + 6 * 86400000).toISOString(), acceptedAt: null, createdAt: new Date().toISOString(), token: 'demo-seed-invitation-token-000000000000' },
   ],
 };
 
@@ -100,12 +100,27 @@ async function demoApi(path, options = {}) {
     const invitation = {
       id: crypto.randomUUID(), tenantId: 'demo', email: request.email, role: request.role,
       invitedBy: 'portfolio-viewer', expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
-      acceptedAt: null, createdAt: new Date().toISOString(),
+      acceptedAt: null, createdAt: new Date().toISOString(), token: `demo-${crypto.randomUUID().replaceAll('-', '')}`,
     };
     state.invitations.unshift(invitation);
     saveDemoState(state);
     return { invitationId: invitation.id, email: invitation.email, role: invitation.role,
-      expiresAt: invitation.expiresAt, token: `demo-${crypto.randomUUID().replaceAll('-', '')}` };
+      expiresAt: invitation.expiresAt, token: invitation.token };
+  }
+  if (path === '/api/saas/invitations/accept' && method === 'POST') {
+    const { token } = JSON.parse(options.body);
+    const invitation = state.invitations.find((entry) => entry.token === token && !entry.acceptedAt);
+    if (!invitation) throw new Error('Invitation has expired or was already accepted.');
+    invitation.acceptedAt = new Date().toISOString();
+    if (!state.members.some((member) => member.email === invitation.email)) {
+      state.members.push({ id: crypto.randomUUID(), tenantId: 'demo', userId: `invited-${invitation.email}`,
+        email: invitation.email, role: invitation.role, joinedAt: new Date().toISOString() });
+    }
+    saveDemoState(state);
+    return { id: 'demo', name: 'Portfolio Reviewers', slug: 'portfolio-reviewers', plan: 'PRO', status: 'ACTIVE',
+      currentUserRole: 'ADMIN', billingConfigured: false, subscriptionStatus: 'DEMO',
+      usage: { plan: 'PRO', workItemsUsed: state.workItems.length, workItemsLimit: 1000,
+        agentRunsUsed: state.runs.length, agentRunsLimit: 500 } };
   }
   if (path === '/api/agent/plan' && method === 'POST') {
     const request = JSON.parse(options.body);
@@ -296,6 +311,25 @@ document.querySelector('#copy-token').addEventListener('click', async () => {
 });
 
 document.querySelector('#refresh-team').addEventListener('click', loadTeam);
+
+document.querySelector('#accept-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const submit = formElement.querySelector('button[type="submit"]');
+  const result = document.querySelector('#accept-result');
+  submit.disabled = true;
+  result.textContent = '';
+  try {
+    const overview = await api('/api/saas/invitations/accept', { method: 'POST', body: JSON.stringify({
+      token: form.get('token').trim(),
+    }) });
+    result.textContent = `Joined ${overview.name} as ${overview.currentUserRole}.`;
+    formElement.reset();
+    await Promise.all([loadOrganization(), loadTeam()]);
+  } catch (error) { result.textContent = error.message; }
+  finally { submit.disabled = false; }
+});
 
 function showBillingReturn() {
   const params = new URLSearchParams(location.search);

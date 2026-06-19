@@ -32,6 +32,8 @@ main { display:grid; gap:24px; padding-bottom:64px; }
 .plan-note[hidden] { display:none; }
 .upgrade-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 .upgrade[hidden] { display:none; }
+.accept-form { display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
+.accept-form label { flex:1; min-width:240px; }
 #team-panel[hidden] { display:none; }
 .invite-result { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:14px 0 4px; padding:12px 14px; border:1px solid #2d6c60; border-radius:12px; background:#0a1424; font-size:.82rem; }
 .invite-result[hidden] { display:none; }
