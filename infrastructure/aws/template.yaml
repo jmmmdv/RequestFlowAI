@@ -271,7 +271,6 @@ Resources:
 
   Service:
     Type: AWS::AppRunner::Service
-    DependsOn: Database
     Properties:
       ServiceName: automation-mission-control
       InstanceConfiguration:
