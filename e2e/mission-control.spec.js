@@ -138,7 +138,7 @@ test('accepts an invitation with its one-time token', async ({ page }) => {
 
 test('agent decomposes a goal into three work items', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('Request').fill('Prepare the client campaign brief');
+  await page.locator('#goal').fill('Prepare the client campaign brief');
   await page.getByRole('button', { name: 'Create work plan' }).click();
 
   await expect(page.getByRole('status')).toContainText('created 3 work items');
@@ -149,7 +149,7 @@ test('agent decomposes a goal into three work items', async ({ page }) => {
 test('high-impact agent work requires approval before tools run', async ({ page }) => {
   await page.goto('/');
   const goal = `Urgent production outage for the client portal ${Date.now()}`;
-  await page.getByLabel('Request').fill(goal);
+  await page.locator('#goal').fill(goal);
   await page.getByRole('button', { name: 'Create work plan' }).click();
 
   await expect(page.getByRole('status')).toContainText('waiting for human approval');
