@@ -194,7 +194,7 @@
     <section id="team-panel" class="panel saas-panel workspace-panel" hidden>
       <div class="section-heading">
         <div><p class="eyebrow">TEAM &amp; ACCESS</p><h2>Members and invitations</h2></div>
-        <button id="refresh-team" class="secondary">Refresh</button>
+        <button id="refresh-team" type="button" class="secondary">Refresh</button>
       </div>
       <p class="description">Invite teammates with a role. An invitation link is shown once at creation, so copy it before leaving.</p>
       <form id="invite-form" class="work-form">
@@ -224,7 +224,7 @@
     <section id="portal-panel" class="panel saas-panel workspace-panel" hidden>
       <div class="section-heading">
         <div><p class="eyebrow">REQUEST PORTAL</p><h2>Share your public form</h2></div>
-        <button id="refresh-portal" class="secondary">Refresh</button>
+        <button id="refresh-portal" type="button" class="secondary">Refresh</button>
       </div>
       <p class="description">Give customers one link to send requests. Optional access tokens and retention controls help protect production pilots.</p>
       <div class="portal-link-row">
@@ -250,10 +250,11 @@
     <section id="requests-panel" class="panel workspace-panel">
       <div class="section-heading">
         <div><p class="eyebrow">INCOMING REQUESTS</p><h2>Request inbox</h2></div>
-        <button id="refresh-requests" class="secondary">Refresh requests</button>
+        <button id="refresh-requests" type="button" class="secondary">Refresh requests</button>
       </div>
       <p class="description">Original submissions stay connected to the work created from them.</p>
       <div id="request-error" class="error" role="alert"></div>
+      <p id="request-status" class="description" aria-live="polite"></p>
       <div id="request-board" class="request-board" aria-live="polite"></div>
     </section>
 
@@ -288,7 +289,7 @@
           <p class="eyebrow">ACTIVITY &amp; APPROVALS</p>
           <h2>Automation history</h2>
         </div>
-        <button id="refresh-runs" class="secondary">Refresh history</button>
+        <button id="refresh-runs" type="button" class="secondary">Refresh history</button>
       </div>
       <p class="description">See what was suggested, who approved it, and what work was created.</p>
       <div id="run-error" class="error" role="alert"></div>
@@ -301,7 +302,7 @@
           <p class="eyebrow">REQUEST WORKSPACE</p>
           <h2>Trackable work</h2>
         </div>
-        <button id="refresh" class="secondary">Refresh</button>
+        <button id="refresh" type="button" class="secondary">Refresh</button>
       </div>
       <div class="stats" aria-label="Board summary">
         <div><strong id="total-count">0</strong><span>Total</span></div>

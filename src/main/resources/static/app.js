@@ -7,9 +7,9 @@ const runError = document.querySelector('#run-error');
 const requestBoard = document.querySelector('#request-board');
 const requestError = document.querySelector('#request-error');
 const queryParameters = new URLSearchParams(location.search);
-const intakeSlug = queryParameters.get('organization') || publicOrganizationSlug();
+let activeIntakeSlug = queryParameters.get('organization') || publicOrganizationSlug();
 const portalAccessToken = queryParameters.get('token') || '';
-document.querySelector('#share-form-link').href = publicFormHref(intakeSlug, portalAccessToken);
+document.querySelector('#share-form-link').href = publicFormHref(activeIntakeSlug, portalAccessToken);
 const demoMode = queryParameters.has('demo') ||
   (location.hostname.endsWith('.vercel.app') && !authenticationConfigured());
 const demoStateKey = 'requestflow-ai-demo-v1';
@@ -290,7 +290,7 @@ function friendlyCategory(value) {
 
 async function loadIntakePortal() {
   try {
-    const portal = await api(publicIntakeUrl(intakeSlug));
+    const portal = await api(publicIntakeUrl(activeIntakeSlug));
     document.querySelector('#intake-organization').textContent = portal.organizationName;
     if (portal.portalTokenRequired && !portalAccessToken) {
       document.querySelector('#intake-description').textContent =
@@ -314,7 +314,7 @@ document.querySelector('#intake-form').addEventListener('submit', async (event) 
   error.textContent = '';
   result.hidden = true;
   try {
-    const receipt = await api(publicIntakeUrl(intakeSlug), intakeRequestOptions('POST', {
+    const receipt = await api(publicIntakeUrl(activeIntakeSlug), intakeRequestOptions('POST', {
         requesterName: form.get('requesterName'), requesterEmail: form.get('requesterEmail'),
         companyName: form.get('companyName'), title: form.get('title'), details: form.get('details'),
         category: form.get('category') || null, urgency: form.get('urgency') || null,
@@ -385,6 +385,12 @@ async function loadOrganization() {
       `${organization.usage.workItemsUsed}/${organization.usage.workItemsLimit} work items · ` +
       `${organization.usage.agentRunsUsed}/${organization.usage.agentRunsLimit} assisted plans this month`;
     renderUsage(organization);
+    if (organization.slug && !queryParameters.get('organization')) {
+      activeIntakeSlug = organization.slug;
+      document.querySelector('#share-form-link').href =
+        organization.publicFormPath || publicFormHref(organization.slug, portalAccessToken);
+      await loadIntakePortal();
+    }
   } catch (error) {
     document.querySelector('#usage-summary').textContent = error.message;
     document.querySelector('#usage-meters').hidden = true;
@@ -658,18 +664,36 @@ async function loadRuns() {
 }
 
 async function loadRequests() {
+  const refresh = document.querySelector('#refresh-requests');
+  const status = document.querySelector('#request-status');
   requestError.textContent = '';
+  status.textContent = '';
+  const label = refresh.textContent;
+  refresh.disabled = true;
+  refresh.textContent = 'Refreshing…';
   try {
-    renderRequests(await api('/api/requests'));
+    const requests = await api('/api/requests');
+    renderRequests(requests);
+    status.textContent = requests.length
+      ? `${requests.length} request${requests.length === 1 ? '' : 's'} loaded.`
+      : 'No requests for your workspace yet. Share the link under Request portal — submissions must use your organization slug.';
   } catch (error) {
     requestError.textContent = error.message;
+    requestBoard.replaceChildren();
+    requestBoard.textContent = 'Could not load requests. Sign in again if your session expired.';
+  } finally {
+    refresh.disabled = false;
+    refresh.textContent = label;
   }
 }
 
 function renderRequests(requests) {
   requestBoard.replaceChildren();
   if (!requests.length) {
-    requestBoard.textContent = 'No incoming requests yet. Share the request form to get started.';
+    const empty = document.createElement('p');
+    empty.className = 'description';
+    empty.textContent = 'No incoming requests yet. Use Request portal → Copy link, then submit a test request from that URL.';
+    requestBoard.append(empty);
     return;
   }
   for (const request of requests) {
