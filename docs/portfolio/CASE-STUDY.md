@@ -77,4 +77,5 @@ actually fit together.
   pending in the README roadmap rather than claimed as done.
 
 See the [demo script](DEMO-SCRIPT.md) for a rehearsed 5-minute walkthrough and likely interview
-questions.
+questions, and the [job-search kit](JOB-SEARCH-KIT.md) for ready-to-use LinkedIn, resume, and
+outreach copy.
