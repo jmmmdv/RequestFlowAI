@@ -1,6 +1,7 @@
 const config = window.REQUESTFLOW_CONFIG ?? window.MISSION_CONFIG ?? {};
 const parameters = new URLSearchParams(location.search);
 const organizationSlug = parameters.get('organization') || config.publicOrganizationSlug || 'local';
+const portalAccessToken = parameters.get('token') || '';
 const apiBaseUrl = (config.apiBaseUrl ?? '').replace(/\/$/, '');
 const formPanel = document.querySelector('#request-form-panel');
 const form = document.querySelector('#public-request-form');
@@ -12,6 +13,11 @@ submitButton.disabled = true;
 
 function friendly(value) {
   return value.replaceAll('_', ' ').toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+}
+
+function intakePath() {
+  const path = `/api/public/intake/${encodeURIComponent(organizationSlug)}`;
+  return portalAccessToken ? `${path}?token=${encodeURIComponent(portalAccessToken)}` : path;
 }
 
 async function request(path, options = {}) {
@@ -28,9 +34,15 @@ async function request(path, options = {}) {
 
 async function loadPortal() {
   if (!/^[a-z0-9-]{3,80}$/.test(organizationSlug)) throw new Error('This request portal is not available.');
-  const portal = await request(`/api/public/intake/${encodeURIComponent(organizationSlug)}`);
+  const portal = await request(intakePath());
   document.querySelector('#portal-organization').textContent = portal.organizationName;
   document.title = `Send a request to ${portal.organizationName} — RequestFlow AI`;
+  if (portal.portalTokenRequired && !portalAccessToken) {
+    document.querySelector('#portal-description').textContent =
+      'This request portal requires a private access link from the team.';
+    formPanel.hidden = true;
+    return;
+  }
   submitButton.disabled = false;
 }
 
@@ -46,7 +58,7 @@ form.addEventListener('submit', async (event) => {
   submitButton.disabled = true;
   errorBox.textContent = '';
   try {
-    const receipt = await request(`/api/public/intake/${encodeURIComponent(organizationSlug)}`, {
+    const receipt = await request(intakePath(), {
       method: 'POST',
       headers: { 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify({
@@ -57,6 +69,7 @@ form.addEventListener('submit', async (event) => {
         details: values.get('details'),
         category: values.get('category') || null,
         urgency: values.get('urgency') || null,
+        website: values.get('website') || null,
       }),
     });
     document.querySelector('#confirmation-reference').textContent = receipt.referenceNumber;

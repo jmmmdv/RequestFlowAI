@@ -19,6 +19,9 @@ public class TenantOrganization {
     @Column(nullable = false, updatable = false) private Instant createdAt;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20) private Plan plan;
     @Column(nullable = false, length = 20) private String status;
+    @Column(length = 64) private String portalTokenHash;
+    @Column(nullable = false) private int requestRetentionDays = 365;
+    @Column(nullable = false) private boolean onboardingCompleted = true;
 
     protected TenantOrganization() {}
 
@@ -28,6 +31,8 @@ public class TenantOrganization {
         this.slug = slug;
         this.plan = Plan.FREE;
         this.status = "ACTIVE";
+        this.requestRetentionDays = 365;
+        this.onboardingCompleted = false;
     }
 
     @PrePersist void timestamp() { if (createdAt == null) createdAt = Instant.now(); }
@@ -39,4 +44,12 @@ public class TenantOrganization {
     public String getStatus() { return status; }
     public void rename(String name, String slug) { this.name = name; this.slug = slug; }
     public void changePlan(Plan plan) { this.plan = plan; }
+    public String getPortalTokenHash() { return portalTokenHash; }
+    public int getRequestRetentionDays() { return requestRetentionDays; }
+    public boolean isOnboardingCompleted() { return onboardingCompleted; }
+    public boolean portalTokenRequired() { return portalTokenHash != null && !portalTokenHash.isBlank(); }
+    public void rotatePortalToken(String hash) { this.portalTokenHash = hash; }
+    public void clearPortalToken() { this.portalTokenHash = null; }
+    public void updateRetentionDays(int days) { this.requestRetentionDays = days; }
+    public void completeOnboarding() { this.onboardingCompleted = true; }
 }

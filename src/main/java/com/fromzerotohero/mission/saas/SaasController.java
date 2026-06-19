@@ -28,4 +28,14 @@ public class SaasController {
     @GetMapping("/invitations") public List<TenantInvitation> invitations() { return service.invitations(); }
     @PostMapping("/invitations/accept") public SaasService.OrganizationOverview accept(
             @Valid @RequestBody SaasService.AcceptInvitationRequest request) { return service.accept(request); }
+    @PostMapping("/onboarding") public SaasService.OrganizationOverview completeOnboarding(
+            @Valid @RequestBody SaasService.UpdateOrganizationRequest request) {
+        return service.completeOnboarding(request);
+    }
+    @GetMapping("/portal") public SaasService.PortalSettings portal() { return service.portalSettings(); }
+    @PatchMapping("/portal") public SaasService.PortalSettings updatePortal(
+            @Valid @RequestBody SaasService.UpdatePortalRequest request) { return service.updatePortal(request); }
+    @PostMapping("/portal/rotate-token") public SaasService.PortalTokenRotated rotatePortalToken() {
+        return service.rotatePortalToken();
+    }
 }

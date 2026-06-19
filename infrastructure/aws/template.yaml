@@ -575,6 +575,9 @@ Outputs:
     Value: !Ref OperationsDashboard
   CognitoIssuerUri:
     Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+  UserPoolId:
+    Description: Cognito user pool ID for admin CLI drills
+    Value: !Ref UserPool
   CognitoClientId:
     Value: !Ref UserPoolClient
   CognitoManagedLoginDomain:

@@ -45,6 +45,7 @@ class InfrastructureAsCodeTest {
                 .contains("Type: AWS::Cognito::UserPoolClient")
                 .contains("AllowedOAuthFlows: [code]")
                 .contains("custom:tenant_id")
+                .contains("UserPoolId:")
                 .contains("STRIPE_WEBHOOK_SECRET")
                 .contains("StripeWebhookSecretArn");
     }
@@ -57,6 +58,10 @@ class InfrastructureAsCodeTest {
         assertThat(Path.of("docs/operations/SLO.md")).exists();
         assertThat(Path.of("docs/operations/INCIDENT-RUNBOOK.md")).exists();
         assertThat(Path.of("docs/operations/RESTORE-DRILL.md")).exists();
+        assertThat(Path.of("docs/saas/EXTERNAL-DRILLS.md")).exists();
+        assertThat(Path.of("docs/saas/DRILL-LOG.md")).exists();
+        assertThat(Path.of("scripts/drills/verify-prerequisites.sh")).exists();
+        assertThat(Path.of("scripts/drills/record-drill.sh")).exists();
     }
 
     @Test

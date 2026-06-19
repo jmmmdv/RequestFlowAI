@@ -51,6 +51,23 @@
     <p id="demo-notice" class="demo-notice" hidden>
       Pilot demo · changes stay in this browser. Production identity, data, and billing require configuration.
     </p>
+    <dialog id="onboarding-dialog" class="onboarding-dialog" aria-labelledby="onboarding-title">
+      <div class="onboarding-card">
+        <p class="eyebrow">WELCOME TO REQUESTFLOW AI</p>
+        <h2 id="onboarding-title">Set up your workspace</h2>
+        <p>Choose how your team appears and get a shareable request form link for customers.</p>
+        <form id="onboarding-form" class="onboarding-form">
+          <label>Organization name
+            <input name="name" required maxlength="120" placeholder="Brightside Services">
+          </label>
+          <label>Public form link slug
+            <input name="slug" required maxlength="80" pattern="[A-Za-z0-9-]{3,80}" placeholder="brightside-services">
+          </label>
+          <button type="submit">Finish setup</button>
+        </form>
+        <p id="onboarding-error" class="error" role="alert"></p>
+      </div>
+    </dialog>
   </header>
   <main>
     <section id="for-teams" class="marketing-section">
@@ -129,6 +146,7 @@
         <label>Urgency <span class="optional">Optional</span>
           <select name="urgency"><option value="">Let the team decide</option><option value="LOW">Low</option><option value="NORMAL">Normal</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select>
         </label>
+        <label class="honeypot-field" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
         <button type="submit">Send request</button>
         <a id="share-form-link" class="button-link secondary-link" href="/public-request.html?organization=local">Open shareable form</a>
       </form>
@@ -202,6 +220,32 @@
           <div id="invitations-list" class="team-list" aria-live="polite"></div>
         </div>
       </div>
+    </section>
+    <section id="portal-panel" class="panel saas-panel workspace-panel" hidden>
+      <div class="section-heading">
+        <div><p class="eyebrow">REQUEST PORTAL</p><h2>Share your public form</h2></div>
+        <button id="refresh-portal" class="secondary">Refresh</button>
+      </div>
+      <p class="description">Give customers one link to send requests. Optional access tokens and retention controls help protect production pilots.</p>
+      <div class="portal-link-row">
+        <code id="portal-share-url">/public-request.html?organization=local</code>
+        <button id="copy-portal-link" type="button" class="secondary">Copy link</button>
+      </div>
+      <p id="portal-token-note" class="description"></p>
+      <form id="portal-settings-form" class="work-form">
+        <label>Keep requests for (days)
+          <input name="requestRetentionDays" type="number" min="7" max="2555" value="365" required>
+        </label>
+        <label class="check-control"><input type="checkbox" name="clearPortalToken"> Remove access token (slug-only link)</label>
+        <button type="submit" class="secondary">Save portal settings</button>
+        <button id="rotate-portal-token" type="button">Generate access token</button>
+      </form>
+      <div id="portal-token-result" class="invite-result" role="status" hidden>
+        <span>Copy this private link now. The access token is shown once.</span>
+        <code id="portal-token-url"></code>
+        <button id="copy-portal-token" type="button" class="secondary">Copy</button>
+      </div>
+      <p id="portal-error" class="error" role="alert"></p>
     </section>
     <section id="requests-panel" class="panel workspace-panel">
       <div class="section-heading">
@@ -277,7 +321,7 @@
 
     <footer>
       <div><strong>RequestFlow AI</strong><p>A pilot-ready SaaS MVP foundation for small service teams.</p></div>
-      <div><a href="#top">Back to top</a><a href="#pricing">Pricing</a><a href="#workspace">View demo</a></div>
+      <div><a href="#top">Back to top</a><a href="#pricing">Pricing</a><a href="#workspace">View demo</a><a href="/docs/pilot/PRIVACY.md">Privacy</a><a href="/docs/pilot/SUPPORT.md">Support</a></div>
     </footer>
   </main>
   <template id="card-template">

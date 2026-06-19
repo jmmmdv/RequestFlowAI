@@ -26,27 +26,33 @@ public class RequestIntakeService {
     private final RuleBasedRequestClassifier classifier;
     private final QuotaService quotas;
     private final TenantContext tenantContext;
+    private final PublicIntakeProperties properties;
+    private final PortalTokenHasher tokenHasher;
 
     public RequestIntakeService(TenantOrganizationRepository organizations,
             RequestSubmissionRepository submissions, WorkItemRepository workItems,
-            RuleBasedRequestClassifier classifier, QuotaService quotas, TenantContext tenantContext) {
+            RuleBasedRequestClassifier classifier, QuotaService quotas, TenantContext tenantContext,
+            PublicIntakeProperties properties, PortalTokenHasher tokenHasher) {
         this.organizations = organizations;
         this.submissions = submissions;
         this.workItems = workItems;
         this.classifier = classifier;
         this.quotas = quotas;
         this.tenantContext = tenantContext;
+        this.properties = properties;
+        this.tokenHasher = tokenHasher;
     }
 
     @Transactional(readOnly = true)
-    public Portal portal(String organizationSlug) {
-        TenantOrganization organization = activeOrganization(organizationSlug);
-        return new Portal(organization.getName(), organization.getSlug());
+    public Portal portal(String organizationSlug, String portalToken) {
+        TenantOrganization organization = activeOrganization(organizationSlug, portalToken);
+        return new Portal(organization.getName(), organization.getSlug(), organization.portalTokenRequired());
     }
 
     @Transactional
-    public Receipt submit(String organizationSlug, IntakeRequest request, String requestedKey) {
-        TenantOrganization organization = activeOrganization(organizationSlug);
+    public Receipt submit(String organizationSlug, IntakeRequest request, String requestedKey, String portalToken) {
+        assertNotBot(request);
+        TenantOrganization organization = activeOrganization(organizationSlug, portalToken);
         String idempotencyKey = normalizeKey(requestedKey);
         var existing = submissions.findByTenantIdAndIdempotencyKey(organization.getId(), idempotencyKey);
         if (existing.isPresent()) return receipt(existing.get(), true);
@@ -75,11 +81,23 @@ public class RequestIntakeService {
                 .orElseThrow(() -> new SaasException(HttpStatus.NOT_FOUND, "Request was not found"));
     }
 
-    private TenantOrganization activeOrganization(String value) {
+    private void assertNotBot(IntakeRequest request) {
+        if (properties.isHoneypotEnabled() && request.website() != null && !request.website().isBlank()) {
+            throw new SaasException(HttpStatus.BAD_REQUEST, "Request could not be processed");
+        }
+    }
+
+    private TenantOrganization activeOrganization(String value, String portalToken) {
         String slug = value == null ? "" : value.toLowerCase(Locale.ROOT).trim();
         if (!slug.matches("[a-z0-9-]{3,80}")) throw portalNotFound();
-        return organizations.findBySlug(slug).filter(organization -> "ACTIVE".equals(organization.getStatus()))
+        TenantOrganization organization = organizations.findBySlug(slug)
+                .filter(candidate -> "ACTIVE".equals(candidate.getStatus()))
                 .orElseThrow(this::portalNotFound);
+        if (organization.portalTokenRequired()
+                && !tokenHasher.matches(portalToken, organization.getPortalTokenHash())) {
+            throw portalNotFound();
+        }
+        return organization;
     }
 
     private SaasException portalNotFound() {
@@ -109,9 +127,10 @@ public class RequestIntakeService {
             @NotBlank @Size(max = 120) String title,
             @NotBlank @Size(min = 10, max = 2000) String details,
             RequestCategory category,
-            RequestUrgency urgency) {}
+            RequestUrgency urgency,
+            @Size(max = 200) String website) {}
 
-    public record Portal(String organizationName, String organizationSlug) {}
+    public record Portal(String organizationName, String organizationSlug, boolean portalTokenRequired) {}
 
     public record Receipt(UUID requestId, String referenceNumber, String status, RequestCategory category,
             com.fromzerotohero.mission.workitem.Priority suggestedPriority,

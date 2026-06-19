@@ -50,6 +50,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/agent/runs/*/approve").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/agent/runs").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/saas/organization").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/saas/portal").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/saas/portal/rotate-token").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/saas/onboarding").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/saas/portal").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/saas/invitations").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/saas/members", "/api/saas/invitations").hasRole("ADMIN")
                         .requestMatchers("/api/agent/**").hasAnyRole("MEMBER", "ADMIN")
@@ -66,7 +70,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(frontendUrl));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key", "X-Correlation-ID"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key", "X-Correlation-ID", "X-Portal-Token"));
         configuration.setExposedHeaders(List.of("Idempotency-Key", "X-Correlation-ID", "Location"));
         configuration.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

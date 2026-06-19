@@ -8,7 +8,8 @@ const requestBoard = document.querySelector('#request-board');
 const requestError = document.querySelector('#request-error');
 const queryParameters = new URLSearchParams(location.search);
 const intakeSlug = queryParameters.get('organization') || publicOrganizationSlug();
-document.querySelector('#share-form-link').href = `/public-request.html?organization=${encodeURIComponent(intakeSlug)}`;
+const portalAccessToken = queryParameters.get('token') || '';
+document.querySelector('#share-form-link').href = publicFormHref(intakeSlug, portalAccessToken);
 const demoMode = queryParameters.has('demo') ||
   (location.hostname.endsWith('.vercel.app') && !authenticationConfigured());
 const demoStateKey = 'requestflow-ai-demo-v1';
@@ -28,8 +29,30 @@ loginButton.addEventListener('click', login);
 logoutButton.addEventListener('click', logout);
 document.querySelector('#start-free').addEventListener('click', () => {
   if (authenticationConfigured() && !authState.authenticated && !demoMode) return login();
+  if (authenticationConfigured() && authState.authenticated && !demoMode) {
+    document.querySelector('#workspace').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
   document.querySelector('#workspace').scrollIntoView({ behavior: 'smooth' });
 });
+
+function publicFormHref(slug, token = '') {
+  const href = `/public-request.html?organization=${encodeURIComponent(slug)}`;
+  return token ? `${href}&token=${encodeURIComponent(token)}` : href;
+}
+
+function intakeRequestOptions(method, body, idempotencyKey) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+  const options = { method, headers };
+  if (body !== undefined) options.body = JSON.stringify(body);
+  return options;
+}
+
+function publicIntakeUrl(slug) {
+  const path = `/api/public/intake/${encodeURIComponent(slug)}`;
+  return portalAccessToken ? `${path}?token=${encodeURIComponent(portalAccessToken)}` : path;
+}
 if (!workspaceAvailable) {
   for (const panel of document.querySelectorAll('.workspace-panel')) panel.hidden = true;
 }
@@ -156,9 +179,15 @@ async function demoApi(path, options = {}) {
   if (path === '/api/agent/runs' && method === 'GET') return state.runs;
   if (path === '/api/saas/organization' && method === 'GET') return {
     id: 'demo', name: 'Brightside Services', slug: 'brightside-services', plan: 'PRO', status: 'ACTIVE',
-    currentUserRole: 'ADMIN', billingConfigured: false, subscriptionStatus: 'DEMO',
+    currentUserRole: 'ADMIN', billingConfigured: false, subscriptionStatus: 'DEMO', onboardingCompleted: true,
+    publicFormPath: '/public-request.html?organization=brightside-services',
     usage: { plan: 'PRO', workItemsUsed: state.workItems.length, workItemsLimit: 1000,
       agentRunsUsed: state.runs.length, agentRunsLimit: 500 },
+  };
+  if (path === '/api/saas/portal' && method === 'GET') return {
+    organizationSlug: 'brightside-services', organizationName: 'Brightside Services', portalTokenRequired: false,
+    requestRetentionDays: 365, publicFormPath: '/public-request.html?organization=brightside-services',
+    shareableFormUrl: `${location.origin}/public-request.html?organization=brightside-services`,
   };
   if (path === '/api/billing/checkout' && method === 'POST') {
     throw new Error('Billing checkout is disabled in the browser-local pilot demo.');
@@ -261,8 +290,13 @@ function friendlyCategory(value) {
 
 async function loadIntakePortal() {
   try {
-    const portal = await api(`/api/public/intake/${encodeURIComponent(intakeSlug)}`);
+    const portal = await api(publicIntakeUrl(intakeSlug));
     document.querySelector('#intake-organization').textContent = portal.organizationName;
+    if (portal.portalTokenRequired && !portalAccessToken) {
+      document.querySelector('#intake-description').textContent =
+        'This request portal requires a private access link from the team.';
+      document.querySelector('#intake-form').hidden = true;
+    }
   } catch (error) {
     document.querySelector('#intake-description').textContent = error.message;
     document.querySelector('#intake-form').hidden = true;
@@ -280,13 +314,12 @@ document.querySelector('#intake-form').addEventListener('submit', async (event) 
   error.textContent = '';
   result.hidden = true;
   try {
-    const receipt = await api(`/api/public/intake/${encodeURIComponent(intakeSlug)}`, {
-      method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({
+    const receipt = await api(publicIntakeUrl(intakeSlug), intakeRequestOptions('POST', {
         requesterName: form.get('requesterName'), requesterEmail: form.get('requesterEmail'),
         companyName: form.get('companyName'), title: form.get('title'), details: form.get('details'),
         category: form.get('category') || null, urgency: form.get('urgency') || null,
-      }),
-    });
+        website: form.get('website') || null,
+      }, crypto.randomUUID()));
     result.replaceChildren();
     const heading = document.createElement('strong');
     heading.textContent = `Request received · ${friendlyCategory(receipt.category)} · ${receipt.suggestedPriority} priority`;
@@ -333,6 +366,13 @@ function renderUsage(organization) {
   if (onTopPlan) note.textContent = 'You are on the top plan.';
 
   document.querySelector('#team-panel').hidden = organization.currentUserRole !== 'ADMIN';
+  document.querySelector('#portal-panel').hidden = organization.currentUserRole !== 'ADMIN';
+  if (organization.currentUserRole === 'ADMIN') {
+    document.querySelector('#share-form-link').href = organization.publicFormPath || publicFormHref(organization.slug);
+  }
+  if (!demoMode && authenticationConfigured() && authState.authenticated && organization.onboardingCompleted === false) {
+    showOnboarding(organization.name, organization.slug);
+  }
 }
 
 async function loadOrganization() {
@@ -389,6 +429,108 @@ function renderInvitations(invitations) {
     list.append(row);
   }
 }
+
+async function loadPortal() {
+  if (document.querySelector('#portal-panel').hidden) return;
+  const portalError = document.querySelector('#portal-error');
+  portalError.textContent = '';
+  try {
+    const portal = await api('/api/saas/portal');
+    document.querySelector('#portal-share-url').textContent = portal.shareableFormUrl;
+    document.querySelector('#portal-token-note').textContent = portal.portalTokenRequired
+      ? 'This portal currently requires a private access token in the link.'
+      : 'Anyone with the public link can submit a request. Generate an access token for a private link.';
+    document.querySelector('#portal-settings-form').elements.requestRetentionDays.value = portal.requestRetentionDays;
+    document.querySelector('#portal-settings-form').clearPortalToken.checked = false;
+  } catch (error) {
+    portalError.textContent = error.message;
+  }
+}
+
+function showOnboarding(name = '', slug = '') {
+  const dialog = document.querySelector('#onboarding-dialog');
+  const form = document.querySelector('#onboarding-form');
+  form.name.value = name;
+  form.slug.value = slug;
+  dialog.hidden = false;
+}
+
+document.querySelector('#onboarding-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const error = document.querySelector('#onboarding-error');
+  const submit = formElement.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  error.textContent = '';
+  try {
+    await api('/api/saas/onboarding', { method: 'POST', body: JSON.stringify({
+      name: form.get('name'), slug: form.get('slug'),
+    }) });
+    document.querySelector('#onboarding-dialog').hidden = true;
+    await Promise.all([loadOrganization(), loadPortal(), loadIntakePortal()]);
+  } catch (requestFailure) {
+    error.textContent = requestFailure.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+document.querySelector('#portal-settings-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const submit = formElement.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  document.querySelector('#portal-error').textContent = '';
+  try {
+    await api('/api/saas/portal', { method: 'PATCH', body: JSON.stringify({
+      requestRetentionDays: Number(form.get('requestRetentionDays')),
+      clearPortalToken: form.has('clearPortalToken'),
+    }) });
+    formElement.clearPortalToken.checked = false;
+    await loadPortal();
+  } catch (error) {
+    document.querySelector('#portal-error').textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+document.querySelector('#rotate-portal-token').addEventListener('click', async () => {
+  const button = document.querySelector('#rotate-portal-token');
+  button.disabled = true;
+  document.querySelector('#portal-error').textContent = '';
+  try {
+    const rotated = await api('/api/saas/portal/rotate-token', { method: 'POST' });
+    const result = document.querySelector('#portal-token-result');
+    document.querySelector('#portal-token-url').textContent = rotated.shareableFormUrl;
+    result.hidden = false;
+    await loadPortal();
+  } catch (error) {
+    document.querySelector('#portal-error').textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.querySelector('#refresh-portal').addEventListener('click', loadPortal);
+
+document.querySelector('#copy-portal-link').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(document.querySelector('#portal-share-url').textContent);
+    document.querySelector('#copy-portal-link').textContent = 'Copied';
+    setTimeout(() => { document.querySelector('#copy-portal-link').textContent = 'Copy link'; }, 1500);
+  } catch { /* clipboard unavailable */ }
+});
+
+document.querySelector('#copy-portal-token').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(document.querySelector('#portal-token-url').textContent);
+    document.querySelector('#copy-portal-token').textContent = 'Copied';
+    setTimeout(() => { document.querySelector('#copy-portal-token').textContent = 'Copy'; }, 1500);
+  } catch { /* clipboard unavailable */ }
+});
 
 async function loadTeam() {
   if (document.querySelector('#team-panel').hidden) return;
@@ -688,5 +830,5 @@ showBillingReturn();
 await loadIntakePortal();
 if (workspaceAvailable) {
   await Promise.all([loadItems(), loadRuns(), loadRequests(), loadOrganization()]);
-  await loadTeam();
+  await Promise.all([loadTeam(), loadPortal()]);
 }

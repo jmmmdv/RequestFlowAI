@@ -77,5 +77,6 @@ npm test
 ```
 
 Then walk through the organization overview, a rejected FREE-plan quota request, admin-only invite,
-Stripe test Checkout, a signed webhook, and the resulting plan/usage change. Record an external AWS,
-Cognito, or Stripe drill date only after it has actually run.
+Stripe test Checkout, a signed webhook, and the resulting plan/usage change. Record live drill
+evidence in [DRILL-LOG.md](DRILL-LOG.md) using the step-by-step runbook in
+[EXTERNAL-DRILLS.md](EXTERNAL-DRILLS.md). Do not mark drills complete until they have actually run.

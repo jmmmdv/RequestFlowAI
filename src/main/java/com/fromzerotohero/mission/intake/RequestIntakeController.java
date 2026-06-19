@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,16 +27,21 @@ public class RequestIntakeController {
 
     @GetMapping("/public/intake/{organizationSlug}")
     @Operation(security = {})
-    public RequestIntakeService.Portal portal(@PathVariable String organizationSlug) {
-        return service.portal(organizationSlug);
+    public RequestIntakeService.Portal portal(@PathVariable String organizationSlug,
+            @RequestParam(value = "token", required = false) String token,
+            @RequestHeader(value = "X-Portal-Token", required = false) String headerToken) {
+        return service.portal(organizationSlug, resolvePortalToken(token, headerToken));
     }
 
     @PostMapping("/public/intake/{organizationSlug}")
     @Operation(security = {})
     public ResponseEntity<RequestIntakeService.Receipt> submit(@PathVariable String organizationSlug,
             @Valid @RequestBody RequestIntakeService.IntakeRequest request,
-            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
-        RequestIntakeService.Receipt receipt = service.submit(organizationSlug, request, idempotencyKey);
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestParam(value = "token", required = false) String token,
+            @RequestHeader(value = "X-Portal-Token", required = false) String headerToken) {
+        RequestIntakeService.Receipt receipt = service.submit(organizationSlug, request, idempotencyKey,
+                resolvePortalToken(token, headerToken));
         URI location = URI.create("/api/requests/" + receipt.requestId());
         return ResponseEntity.status(receipt.replayed() ? HttpStatus.OK : HttpStatus.CREATED)
                 .location(location).body(receipt);
@@ -49,5 +55,10 @@ public class RequestIntakeController {
     @SecurityRequirement(name = "bearer-jwt")
     public RequestSubmission request(@PathVariable java.util.UUID requestId) {
         return service.currentRequest(requestId);
+    }
+
+    private String resolvePortalToken(String queryToken, String headerToken) {
+        if (headerToken != null && !headerToken.isBlank()) return headerToken.trim();
+        return queryToken == null ? null : queryToken.trim();
     }
 }

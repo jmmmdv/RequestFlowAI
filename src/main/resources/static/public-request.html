@@ -66,6 +66,7 @@
           <button type="submit">Send request</button>
           <span>Your category and urgency help the team organize the request; they do not approve work automatically.</span>
         </div>
+        <label class="honeypot-field" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
       </form>
       <p id="public-request-error" class="error" role="alert"></p>
     </section>
@@ -90,7 +91,7 @@
   </main>
   <footer class="public-request-footer">
     <span>Powered by RequestFlow AI</span>
-    <span>Do not include passwords, payment details, or other sensitive secrets.</span>
+    <span>Do not include passwords, payment details, or other sensitive secrets. <a href="/docs/pilot/PRIVACY.md">Privacy notice</a></span>
   </footer>
   <script src="/config.js"></script>
   <script type="module" src="/public-request.js"></script>

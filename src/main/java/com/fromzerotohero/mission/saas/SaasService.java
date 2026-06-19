@@ -19,6 +19,8 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
+import com.fromzerotohero.mission.intake.PortalTokenHasher;
 
 @Service
 public class SaasService {
@@ -28,14 +30,19 @@ public class SaasService {
     private final BillingSubscriptionRepository subscriptions;
     private final TenantContext tenantContext;
     private final QuotaService quotas;
+    private final PortalTokenHasher tokenHasher;
+    private final String frontendUrl;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public SaasService(TenantOrganizationRepository organizations, TenantMembershipRepository memberships,
             TenantInvitationRepository invitations, BillingSubscriptionRepository subscriptions,
-            TenantContext tenantContext, QuotaService quotas) {
+            TenantContext tenantContext, QuotaService quotas, PortalTokenHasher tokenHasher,
+            @Value("${mission.frontend-url:http://localhost:8080}") String frontendUrl) {
         this.organizations = organizations; this.memberships = memberships;
         this.invitations = invitations; this.subscriptions = subscriptions;
         this.tenantContext = tenantContext; this.quotas = quotas;
+        this.tokenHasher = tokenHasher;
+        this.frontendUrl = frontendUrl.replaceAll("/$", "");
     }
 
     @Transactional
@@ -118,11 +125,72 @@ public class SaasService {
                         tenantContext.email(), tenantContext.currentRole())));
     }
 
+    @Transactional
+    public OrganizationOverview completeOnboarding(UpdateOrganizationRequest request) {
+        TenantOrganization organization = ensureCurrentOrganization();
+        if (organization.isOnboardingCompleted()) {
+            throw new SaasException(HttpStatus.CONFLICT, "Onboarding is already complete");
+        }
+        String slug = normalizeSlug(request.slug());
+        organizations.findBySlug(slug)
+                .filter(candidate -> !candidate.getId().equals(organization.getId()))
+                .ifPresent(candidate -> { throw new SaasException(HttpStatus.CONFLICT, "Organization slug is already used"); });
+        organization.rename(normalizeName(request.name()), slug);
+        organization.completeOnboarding();
+        organizations.save(organization);
+        TenantMembership membership = ensureCurrentMembership(organization.getId());
+        BillingSubscription subscription = subscriptions.findById(organization.getId())
+                .orElseGet(() -> subscriptions.save(new BillingSubscription(organization.getId())));
+        return overview(organization, membership, subscription);
+    }
+
+    @Transactional(readOnly = true)
+    public PortalSettings portalSettings() {
+        TenantOrganization organization = ensureCurrentOrganization();
+        return portalSettings(organization, null);
+    }
+
+    @Transactional
+    public PortalSettings updatePortal(UpdatePortalRequest request) {
+        ensureCurrentOrganization();
+        TenantOrganization organization = organizations.findById(tenantContext.tenantId()).orElseThrow();
+        organization.updateRetentionDays(request.requestRetentionDays());
+        if (request.clearPortalToken()) organization.clearPortalToken();
+        organizations.save(organization);
+        return portalSettings(organization, null);
+    }
+
+    @Transactional
+    public PortalTokenRotated rotatePortalToken() {
+        TenantOrganization organization = ensureCurrentOrganization();
+        byte[] bytes = new byte[32];
+        secureRandom.nextBytes(bytes);
+        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        organization.rotatePortalToken(tokenHasher.hash(token));
+        organizations.save(organization);
+        return new PortalTokenRotated(token, portalSettings(organization, token).shareableFormUrl());
+    }
+
+    private PortalSettings portalSettings(TenantOrganization organization, String portalToken) {
+        String path = publicFormPath(organization.getSlug(), portalToken);
+        return new PortalSettings(organization.getSlug(), organization.getName(), organization.portalTokenRequired(),
+                organization.getRequestRetentionDays(), path, frontendUrl + path);
+    }
+
+    private String publicFormPath(String slug, String portalToken) {
+        String path = "/public-request.html?organization=" + slug;
+        if (portalToken != null && !portalToken.isBlank()) {
+            path += "&token=" + java.net.URLEncoder.encode(portalToken, StandardCharsets.UTF_8);
+        }
+        return path;
+    }
+
     private OrganizationOverview overview(TenantOrganization organization, TenantMembership membership,
             BillingSubscription subscription) {
         return new OrganizationOverview(organization.getId(), organization.getName(), organization.getSlug(),
                 organization.getPlan(), organization.getStatus(), membership.getRole(), subscription.getStripeCustomerId() != null,
-                subscription.getStatus(), quotas.usage(organization.getId()));
+                subscription.getStatus(), quotas.usage(organization.getId()), organization.isOnboardingCompleted(),
+                publicFormPath(organization.getSlug(), null));
     }
 
     private String normalizeName(String value) { return value.trim().replaceAll("\\s+", " "); }
@@ -145,5 +213,11 @@ public class SaasService {
             Instant expiresAt, String token) {}
     public record OrganizationOverview(UUID id, String name, String slug, Plan plan, String status,
             MembershipRole currentUserRole, boolean billingConfigured, String subscriptionStatus,
-            QuotaService.UsageSnapshot usage) {}
+            QuotaService.UsageSnapshot usage, boolean onboardingCompleted, String publicFormPath) {}
+    public record PortalSettings(String organizationSlug, String organizationName, boolean portalTokenRequired,
+            int requestRetentionDays, String publicFormPath, String shareableFormUrl) {}
+    public record PortalTokenRotated(String portalToken, String shareableFormUrl) {}
+    public record UpdatePortalRequest(
+            @jakarta.validation.constraints.Min(7) @jakarta.validation.constraints.Max(2555) int requestRetentionDays,
+            boolean clearPortalToken) {}
 }
