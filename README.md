@@ -16,6 +16,14 @@ bounded planning agent turns goals into attributable, auditable work.
 > problem, key engineering decisions, and evidence, then the [demo script](docs/portfolio/DEMO-SCRIPT.md)
 > for a five-minute walkthrough.
 
+## Product direction: MissionOps AI
+
+This repository is evolving from Automation Mission Control into **MissionOps AI**, a request
+automation product that helps small service businesses turn messy customer or employee requests
+into organized, trackable, automation-assisted work with human approval and audit history. The
+[commercial MVP contract](docs/product/MISSIONOPS-MVP.md) defines the first paid pilot and keeps raw
+service requests separate from internal execution work.
+
 ## Why this project exists
 
 Most training repositories are disconnected examples. This one demonstrates how production
