@@ -2,8 +2,8 @@
 
 ## Project identity
 
-This repository is **FromZeroToHero**, and the product being developed inside it is now
-**RequestFlow AI**.
+This repository is published as **[RequestFlowAI](https://github.com/jmmmdv/RequestFlowAI)** on GitHub.
+The product being developed inside it is **RequestFlow AI**.
 
 RequestFlow AI is a SaaS MVP foundation for small businesses, agencies, consultants, and small
 IT/support teams. It helps them collect client or internal requests, classify and prioritize those

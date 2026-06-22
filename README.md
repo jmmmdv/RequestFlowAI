@@ -8,7 +8,7 @@ work moves forward.
 ![Java 21](https://img.shields.io/badge/Java-21-ED8B00)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F)
 ![Playwright](https://img.shields.io/badge/Playwright-E2E-2EAD33)
-[![CI](https://github.com/jmmmdv/FromZeroToHero/actions/workflows/ci.yml/badge.svg)](https://github.com/jmmmdv/FromZeroToHero/actions/workflows/ci.yml)
+[![CI](https://github.com/jmmmdv/RequestFlowAI/actions/workflows/ci.yml/badge.svg)](https://github.com/jmmmdv/RequestFlowAI/actions/workflows/ci.yml)
 ![Coverage gate](https://img.shields.io/badge/coverage_gate-80%25-brightgreen)
 
 ![RequestFlow AI landing page](docs/assets/requestflow-ai-landing.jpg)
@@ -18,6 +18,8 @@ work moves forward.
 > and Stripe integration layers are implemented and tested. Production onboarding, abuse controls,
 > identity/payment drills, and real pilot feedback remain launch work.
 
+> **Repository:** [github.com/jmmmdv/RequestFlowAI](https://github.com/jmmmdv/RequestFlowAI)
+>
 > **Reviewing this for a role?** Start with the [case study](docs/portfolio/CASE-STUDY.md), then use
 > the [five-minute demo](docs/portfolio/DEMO-SCRIPT.md) to inspect the product and its engineering
 > evidence.

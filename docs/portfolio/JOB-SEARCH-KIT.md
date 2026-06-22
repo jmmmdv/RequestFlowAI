@@ -28,12 +28,12 @@ portfolio; neither side needs to hide the other.
 > rule-based triage, trackable work,
 > tenant-isolated data, team roles, quotas, verified billing events, and bounded automation with a
 > full audit trail. Case study: _link_ · Demo: _link_ ·
-> Code: https://github.com/jmmmdv/FromZeroToHero
+> Code: https://github.com/jmmmdv/RequestFlowAI
 
 ## Resume project entry
 
 **RequestFlow AI** — SaaS MVP foundation, solo project · Java 21, Spring Boot, PostgreSQL, AWS,
-Stripe · [github.com/jmmmdv/FromZeroToHero](https://github.com/jmmmdv/FromZeroToHero)
+Stripe · [github.com/jmmmdv/RequestFlowAI](https://github.com/jmmmdv/RequestFlowAI)
 
 - Designed and built a tenant-scoped request/work management REST API with validation, HATEOAS,
   status tracking, and RFC 9457-style problem responses; verified JWT identity supplies the tenant

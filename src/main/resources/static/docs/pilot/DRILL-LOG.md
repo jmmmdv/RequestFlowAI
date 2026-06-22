@@ -3,7 +3,7 @@
 Append-only record of **live** drills against sandbox or production-shaped infrastructure.
 CI and `./mvnw verify` are necessary but **not** sufficient evidence for this log.
 
-Full runbook: [EXTERNAL-DRILLS.md](https://github.com/jmmmdv/FromZeroToHero/blob/main/docs/saas/EXTERNAL-DRILLS.md) (or `/docs/saas/EXTERNAL-DRILLS.md` in the repository).
+Full runbook: [EXTERNAL-DRILLS.md](https://github.com/jmmmdv/RequestFlowAI/blob/main/docs/saas/EXTERNAL-DRILLS.md) (or `/docs/saas/EXTERNAL-DRILLS.md` in the repository).
 
 | Drill ID | Description | Status | Last run (UTC) | Environment | Operator | Notes |
 |---|---|---|---|---|---|---|
