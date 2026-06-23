@@ -311,6 +311,8 @@ document.querySelector('#intake-form').addEventListener('submit', async (event) 
   const result = document.querySelector('#intake-result');
   const error = document.querySelector('#intake-error');
   submit.disabled = true;
+  submit.setAttribute('aria-busy', 'true');
+  submit.textContent = 'Sending…';
   error.textContent = '';
   result.hidden = true;
   try {
@@ -325,7 +327,10 @@ document.querySelector('#intake-form').addEventListener('submit', async (event) 
     heading.textContent = `Request received · ${friendlyCategory(receipt.category)} · ${receipt.suggestedPriority} priority`;
     const summary = document.createElement('span');
     summary.textContent = `${receipt.recommendedNextAction} Reference: ${receipt.referenceNumber}`;
-    result.append(heading, summary);
+    const reference = document.createElement('p');
+    reference.className = 'intake-reference';
+    reference.textContent = `Reference ${receipt.referenceNumber} · Status NEW`;
+    result.append(heading, summary, reference);
     result.hidden = false;
     formElement.reset();
     if (workspaceAvailable) await Promise.all([loadRequests(), loadItems(), loadOrganization()]);
@@ -333,6 +338,8 @@ document.querySelector('#intake-form').addEventListener('submit', async (event) 
     error.textContent = requestFailure.message;
   } finally {
     submit.disabled = false;
+    submit.removeAttribute('aria-busy');
+    submit.textContent = 'Send request';
   }
 });
 
@@ -855,4 +862,16 @@ await loadIntakePortal();
 if (workspaceAvailable) {
   await Promise.all([loadItems(), loadRuns(), loadRequests(), loadOrganization()]);
   await Promise.all([loadTeam(), loadPortal()]);
+}
+
+const siteHeader = document.querySelector('.site-header');
+const workspaceJump = document.querySelector('#workspace-jump');
+const workspaceSection = document.querySelector('#workspace');
+if (siteHeader && workspaceJump && workspaceSection) {
+  const observer = new IntersectionObserver(([entry]) => {
+    const showJump = !entry.isIntersecting && window.scrollY > 320;
+    workspaceJump.hidden = !showJump;
+    siteHeader.classList.toggle('scrolled', window.scrollY > 24);
+  }, { threshold: 0.05 });
+  observer.observe(workspaceSection);
 }

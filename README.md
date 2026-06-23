@@ -275,6 +275,7 @@ planning assistants are deterministic rules, not an external LLM.
 | Multi-tenancy and security | `security/`, repository methods, `TenantIsolationSecurityTest` |
 | SaaS control plane | `saas/`, Flyway migrations, and `SaasProductIntegrationTest` |
 | Automation safety | `agent/`, approval policy, idempotency, audit, evaluation dataset |
+| Portfolio and investor material | `docs/portfolio/CASE-STUDY.md`, `JOB-SEARCH-KIT.md`, `INVESTOR-ONE-PAGER.md` |
 | Browser experience | `src/main/resources/static`, `e2e/`, and Playwright configuration |
 | Data confidence | Flyway, H2, PostgreSQL Testcontainers, API/database consistency tests |
 | Delivery | GitHub Actions, Jenkins, Docker, CloudFormation, App Runner concepts |

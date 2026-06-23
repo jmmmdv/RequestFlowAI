@@ -84,8 +84,8 @@ public class SaasService {
         if (!invitation.isUsable(Instant.now())) {
             throw new SaasException(HttpStatus.GONE, "Invitation has expired or was already accepted");
         }
-        String email = tenantContext.email();
-        if (email != null && !email.equalsIgnoreCase(invitation.getEmail())) {
+        String email = tenantContext.requireEmail();
+        if (!email.equalsIgnoreCase(invitation.getEmail())) {
             throw new SaasException(HttpStatus.FORBIDDEN, "Invitation belongs to a different email address");
         }
         memberships.findByTenantIdAndUserId(invitation.getTenantId(), tenantContext.userId())

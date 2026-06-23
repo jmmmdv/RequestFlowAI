@@ -9,6 +9,7 @@
 
 - Live demo: https://from-zero-to-hero-azure.vercel.app
 - Source: https://github.com/jmmmdv/RequestFlowAI
+- Investor one-pager: [INVESTOR-ONE-PAGER.md](INVESTOR-ONE-PAGER.md)
 - API docs: `/swagger-ui.html` on the running service
 
 ---

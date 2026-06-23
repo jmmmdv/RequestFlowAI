@@ -1,15 +1,16 @@
 # Pilot support expectations
 
-RequestFlow AI is in **pilot** stage. Set clear expectations with early customers.
+RequestFlow AI is in **pilot** stage. These expectations apply to early customers evaluating the
+product.
 
 ## What pilot customers can expect
 
 - A working request portal, inbox, work board, and team workspace foundation
 - Rule-based category, priority, summary, and next-action suggestions
 - Email-bound team invitations with expiring tokens
-- Help during agreed pilot hours from **[your support email]**
+- Help during agreed pilot hours from **support@requestflow.ai** (replace before launch)
 
-## Response targets (example)
+## Response targets
 
 | Priority | First response target |
 |---|---|
@@ -17,21 +18,20 @@ RequestFlow AI is in **pilot** stage. Set clear expectations with early customer
 | Broken workflow | 1 business day |
 | Questions and feedback | 2 business days |
 
-Adjust these targets to what you can actually meet.
-
 ## How to report an issue
 
-1. Email **[support email]** with organization name and steps to reproduce.
+1. Email **support@requestflow.ai** with your organization name and steps to reproduce.
 2. Include a request reference (`RF-XXXXXXXX`) when the issue involves a submission.
-3. For security concerns, use **[security contact]** and do not post secrets in email.
+3. For security concerns, email **security@requestflow.ai** and do not post secrets in email.
 
 ## Out of scope during pilot
 
 - Custom integrations (email ingestion, WhatsApp, CRM sync)
-- Legal review of this privacy template
+- Legal review beyond this starter notice
 - 24/7 on-call unless explicitly contracted
 - Guaranteed LLM-based triage (the product is rule-based today)
 
 ## Escalation
 
-If a pilot customer needs to stop using the product, disable their public portal token, suspend the organization, and confirm retention/deletion steps documented in your runbook.
+If a pilot customer needs to stop using the product, disable the public portal token, suspend the
+organization, and confirm retention/deletion steps in the operator runbook.

@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Service
 public class BillingService {
     private final BillingSubscriptionRepository subscriptions;
+    private final BillingWebhookEventRepository webhookEvents;
     private final TenantOrganizationRepository organizations;
     private final TenantContext tenantContext;
     private final ObjectMapper objectMapper;
@@ -38,23 +39,25 @@ public class BillingService {
 
     @Autowired
     public BillingService(BillingSubscriptionRepository subscriptions,
-            TenantOrganizationRepository organizations, TenantContext tenantContext,
-            ObjectMapper objectMapper, RestClient.Builder restClientBuilder,
+            BillingWebhookEventRepository webhookEvents, TenantOrganizationRepository organizations,
+            TenantContext tenantContext, ObjectMapper objectMapper, RestClient.Builder restClientBuilder,
             @Value("${mission.billing.stripe.secret-key:}") String secretKey,
             @Value("${mission.billing.stripe.webhook-secret:}") String webhookSecret,
             @Value("${mission.billing.stripe.pro-price-id:}") String proPriceId,
             @Value("${mission.billing.stripe.business-price-id:}") String businessPriceId,
             @Value("${mission.frontend-url:http://localhost:8080}") String frontendUrl) {
-        this(subscriptions, organizations, tenantContext, objectMapper,
+        this(subscriptions, webhookEvents, organizations, tenantContext, objectMapper,
                 restClientBuilder.baseUrl("https://api.stripe.com/v1").build(), secretKey,
                 webhookSecret, proPriceId, businessPriceId, frontendUrl, Clock.systemUTC());
     }
 
-    BillingService(BillingSubscriptionRepository subscriptions,
+    BillingService(BillingSubscriptionRepository subscriptions, BillingWebhookEventRepository webhookEvents,
             TenantOrganizationRepository organizations, TenantContext tenantContext,
             ObjectMapper objectMapper, RestClient stripe, String secretKey, String webhookSecret,
             String proPriceId, String businessPriceId, String frontendUrl, Clock clock) {
-        this.subscriptions = subscriptions; this.organizations = organizations;
+        this.subscriptions = subscriptions;
+        this.webhookEvents = webhookEvents;
+        this.organizations = organizations;
         this.tenantContext = tenantContext; this.objectMapper = objectMapper; this.stripe = stripe;
         this.secretKey = secretKey; this.webhookSecret = webhookSecret; this.proPriceId = proPriceId;
         this.businessPriceId = businessPriceId; this.frontendUrl = frontendUrl.replaceAll("/$", "");
@@ -95,10 +98,18 @@ public class BillingService {
         verifySignature(payload, signature);
         try {
             JsonNode event = objectMapper.readTree(payload);
+            String eventId = event.path("id").asText(null);
+            if (eventId == null || eventId.isBlank()) {
+                throw new SaasException(HttpStatus.BAD_REQUEST, "Stripe event id is required");
+            }
+            if (webhookEvents.existsById(eventId)) {
+                return;
+            }
             String type = event.path("type").asText();
             JsonNode object = event.path("data").path("object");
             if (type.equals("checkout.session.completed")) synchronizeCheckout(object);
             if (type.startsWith("customer.subscription.")) synchronizeSubscription(object);
+            webhookEvents.save(new BillingWebhookEvent(eventId, clock.instant()));
         } catch (JsonProcessingException exception) {
             throw new SaasException(HttpStatus.BAD_REQUEST, "Stripe webhook payload is not valid JSON");
         }

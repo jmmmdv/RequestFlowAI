@@ -97,7 +97,7 @@ class SaasProductIntegrationTest {
     void signedStripeCheckoutWebhookActivatesProPlan() throws Exception {
         long timestamp = Instant.now().getEpochSecond();
         String payload = """
-                {"type":"checkout.session.completed","data":{"object":{
+                {"id":"evt_checkout_01","type":"checkout.session.completed","data":{"object":{
                   "client_reference_id":"00000000-0000-0000-0000-000000000001",
                   "customer":"cus_test","subscription":"sub_test",
                   "metadata":{"plan":"PRO"}
@@ -149,14 +149,29 @@ class SaasProductIntegrationTest {
     }
 
     @Test
+    void duplicateStripeWebhookEventIsIgnored() throws Exception {
+        String payload = """
+                {"id":"evt_duplicate_integration","type":"checkout.session.completed","data":{"object":{
+                  "client_reference_id":"00000000-0000-0000-0000-000000000001",
+                  "customer":"cus_dup","subscription":"sub_dup","metadata":{"plan":"PRO"}}}}
+                """.trim();
+        signedWebhook(payload).andExpect(status().isOk());
+        org.assertj.core.api.Assertions.assertThat(organizations.findById(TENANT).orElseThrow().getPlan())
+                .isEqualTo(Plan.PRO);
+        signedWebhook(payload).andExpect(status().isOk());
+        org.assertj.core.api.Assertions.assertThat(subscriptions.findById(TENANT).orElseThrow().getStripeCustomerId())
+                .isEqualTo("cus_dup");
+    }
+
+    @Test
     void subscriptionLifecycleFallsBackToFreeWhenCancelled() throws Exception {
         signedWebhook("""
-                {"type":"checkout.session.completed","data":{"object":{
+                {"id":"evt_lifecycle_checkout","type":"checkout.session.completed","data":{"object":{
                   "client_reference_id":"00000000-0000-0000-0000-000000000001",
                   "customer":"cus_lifecycle","subscription":"sub_lifecycle","metadata":{"plan":"PRO"}}}}
                 """).andExpect(status().isOk());
         signedWebhook("""
-                {"type":"customer.subscription.updated","data":{"object":{
+                {"id":"evt_lifecycle_active","type":"customer.subscription.updated","data":{"object":{
                   "id":"sub_lifecycle","customer":"cus_lifecycle","status":"active",
                   "current_period_end":1893456000}}}
                 """).andExpect(status().isOk());
@@ -164,7 +179,7 @@ class SaasProductIntegrationTest {
                 .isEqualTo("ACTIVE");
 
         signedWebhook("""
-                {"type":"customer.subscription.deleted","data":{"object":{
+                {"id":"evt_lifecycle_cancel","type":"customer.subscription.deleted","data":{"object":{
                   "id":"sub_lifecycle","customer":"cus_lifecycle","status":"canceled"}}}
                 """).andExpect(status().isOk());
         org.assertj.core.api.Assertions.assertThat(organizations.findById(TENANT).orElseThrow().getPlan())

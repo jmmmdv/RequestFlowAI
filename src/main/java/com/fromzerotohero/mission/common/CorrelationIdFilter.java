@@ -24,6 +24,10 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
         response.setHeader("X-Content-Type-Options", "nosniff");
         response.setHeader("X-Frame-Options", "DENY");
         response.setHeader("Referrer-Policy", "no-referrer");
+        response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+        if ("https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"))) {
+            response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+        }
         response.setHeader("Content-Security-Policy",
                 "default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'");
         try (MDC.MDCCloseable ignored = MDC.putCloseable("correlationId", correlationId)) {

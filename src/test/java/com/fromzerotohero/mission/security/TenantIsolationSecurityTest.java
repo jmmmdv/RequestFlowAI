@@ -2,8 +2,11 @@ package com.fromzerotohero.mission.security;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -137,6 +140,63 @@ class TenantIsolationSecurityTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"goal\":\"Forbidden action\",\"createWorkItems\":true}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void tenantCannotMutateAnotherTenantsWorkItem() throws Exception {
+        WorkItem tenantBItem = workItems.save(
+                new WorkItem("Tenant B item", "Hidden", Priority.HIGH, WorkStatus.READY, TENANT_B));
+
+        mvc.perform(put("/api/work-items/{id}", tenantBItem.getId())
+                        .with(jwtFor(TENANT_A, "MEMBER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Stolen","description":"Nope","priority":"LOW","status":"BACKLOG"}
+                                """))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(patch("/api/work-items/{id}/status", tenantBItem.getId())
+                        .with(jwtFor(TENANT_A, "MEMBER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"DONE\"}"))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(delete("/api/work-items/{id}", tenantBItem.getId()).with(jwtFor(TENANT_A, "ADMIN")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void memberCannotCreateBillingCheckout() throws Exception {
+        mvc.perform(post("/api/billing/checkout")
+                        .with(jwtFor(TENANT_A, "MEMBER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"plan\":\"PRO\",\"idempotencyKey\":\"checkout-security-01\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void invitationAcceptRequiresMatchingEmailClaim() throws Exception {
+        String response = mvc.perform(post("/api/saas/invitations").with(jwtFor(TENANT_A, "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"invited@example.com\",\"role\":\"MEMBER\"}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String token = new com.fasterxml.jackson.databind.ObjectMapper().readTree(response).path("token").asText();
+
+        mvc.perform(post("/api/saas/invitations/accept")
+                        .with(jwt().jwt(j -> j.subject("user-999").claim("tenant_id", TENANT_A.toString())
+                                .claim("email", "other@example.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_MEMBER")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"" + token + "\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void swaggerAndOpenApiRequireAdminWhenSecurityEnabled() throws Exception {
+        mvc.perform(get("/swagger-ui.html")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/v3/api-docs")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/v3/api-docs").with(jwtFor(TENANT_A, "ADMIN")))
+                .andExpect(status().isOk());
     }
 
     @Test
