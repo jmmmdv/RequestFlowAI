@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Fallback manual Cognito tenant transfer when automatic sync on invitation accept is unavailable.
 set -euo pipefail
 
 : "${USER_POOL_ID:?Set USER_POOL_ID from CloudFormation output UserPoolId}"

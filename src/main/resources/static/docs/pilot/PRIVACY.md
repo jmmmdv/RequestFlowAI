@@ -36,8 +36,7 @@ Authorized members of the team workspace operating this portal. Request data is 
 ## Your choices
 
 Contact the team that shared this form to ask about access, correction, or deletion where
-applicable law requires it. For pilot support, email **support@requestflow.ai** (replace with your
-operational address before production launch).
+applicable law requires it. For pilot support, email **j.mmmdv@gmail.com**.
 
 ## Security
 

@@ -70,6 +70,15 @@ class InfrastructureAsCodeTest {
     }
 
     @Test
+    void productionTemplateSyncsCognitoOnInvitationAccept() throws Exception {
+        String template = Files.readString(AWS_TEMPLATE);
+        assertThat(template)
+                .contains("COGNITO_USER_POOL_ID")
+                .contains("SyncCognitoInvitations")
+                .contains("cognito-idp:AdminUpdateUserAttributes");
+    }
+
+    @Test
     void vercelPublishesAnExplicitStaticPortfolioPreview() throws Exception {
         String configuration = Files.readString(Path.of("vercel.json"));
 

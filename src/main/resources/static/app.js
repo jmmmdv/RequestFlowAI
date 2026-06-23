@@ -609,7 +609,9 @@ document.querySelector('#accept-form').addEventListener('submit', async (event) 
     const overview = await api('/api/saas/invitations/accept', { method: 'POST', body: JSON.stringify({
       token: form.get('token').trim(),
     }) });
-    result.textContent = `Joined ${overview.name} as ${overview.currentUserRole}.`;
+    result.textContent = overview.identityRefreshRequired
+      ? `Joined ${overview.name} as ${overview.currentUserRole}. Sign in again to refresh your workspace.`
+      : `Joined ${overview.name} as ${overview.currentUserRole}.`;
     formElement.reset();
     await Promise.all([loadOrganization(), loadTeam()]);
   } catch (error) { result.textContent = error.message; }

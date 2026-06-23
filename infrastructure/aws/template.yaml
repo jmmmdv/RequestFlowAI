@@ -450,6 +450,17 @@ Resources:
                   - !Ref DatabasePasswordSecret
                   - !If [HasStripeSecrets, !Ref StripeSecretKeyArn, !Ref AWS::NoValue]
                   - !If [HasStripeSecrets, !Ref StripeWebhookSecretArn, !Ref AWS::NoValue]
+        - PolicyName: SyncCognitoInvitations
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminUpdateUserAttributes
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminRemoveUserFromGroup
+                  - cognito-idp:AdminUserGlobalSignOut
+                Resource: !GetAtt UserPool.Arn
 
   Service:
     Type: AWS::AppRunner::Service
@@ -478,6 +489,8 @@ Resources:
               - { Name: DATABASE_USERNAME, Value: !Ref DatabaseUsername }
               - { Name: OAUTH2_ISSUER_URI, Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}' }
               - { Name: FRONTEND_URL, Value: !Ref FrontendUrl }
+              - { Name: COGNITO_USER_POOL_ID, Value: !Ref UserPool }
+              - { Name: AWS_REGION, Value: !Ref AWS::Region }
               - { Name: INTAKE_RATE_LIMIT_ENABLED, Value: 'true' }
               - { Name: INTAKE_RATE_LIMIT_REQUESTS_PER_MINUTE, Value: '10' }
               - { Name: STRIPE_PRO_PRICE_ID, Value: !Ref StripeProPriceId }

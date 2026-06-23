@@ -106,9 +106,19 @@ attributes and groups are updated (external identity step).
 1. Sign up `teammate+drill@example.com` in Cognito (new account gets its **own** tenant by default).
 2. Note the founder's `tenant_id` from drill 1 (organization UUID from `/api/saas/organization`).
 
-### Part C — Transfer identity (AWS CLI)
+### Part C — Transfer identity (automatic in production)
 
-Replace values:
+When the App Runner service has `COGNITO_USER_POOL_ID` configured, **accept invitation** in the
+dashboard synchronizes Cognito tenant claims and groups automatically. The invited user should
+**sign in again** after accepting so fresh JWT claims include the founder tenant.
+
+Manual CLI transfer remains available as a fallback:
+
+```bash
+./scripts/drills/cognito-invitation-transfer.sh
+```
+
+Legacy manual commands (same as the helper script):
 
 ```bash
 export FOUNDER_TENANT_ID="00000000-0000-0000-0000-000000000001"   # from founder JWT/API

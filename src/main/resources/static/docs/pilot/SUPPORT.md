@@ -8,7 +8,7 @@ product.
 - A working request portal, inbox, work board, and team workspace foundation
 - Rule-based category, priority, summary, and next-action suggestions
 - Email-bound team invitations with expiring tokens
-- Help during agreed pilot hours from **support@requestflow.ai** (replace before launch)
+- Help during agreed pilot hours from **j.mmmdv@gmail.com**
 
 ## Response targets
 
@@ -20,9 +20,9 @@ product.
 
 ## How to report an issue
 
-1. Email **support@requestflow.ai** with your organization name and steps to reproduce.
+1. Email **j.mmmdv@gmail.com** with your organization name and steps to reproduce.
 2. Include a request reference (`RF-XXXXXXXX`) when the issue involves a submission.
-3. For security concerns, email **security@requestflow.ai** and do not post secrets in email.
+3. For security concerns, email **j.mmmdv@gmail.com** with subject `SECURITY` and do not post secrets in email.
 
 ## Out of scope during pilot
 

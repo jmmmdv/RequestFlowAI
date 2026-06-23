@@ -31,17 +31,19 @@ public class SaasService {
     private final TenantContext tenantContext;
     private final QuotaService quotas;
     private final PortalTokenHasher tokenHasher;
+    private final IdentityTenantSync identityTenantSync;
     private final String frontendUrl;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public SaasService(TenantOrganizationRepository organizations, TenantMembershipRepository memberships,
             TenantInvitationRepository invitations, BillingSubscriptionRepository subscriptions,
             TenantContext tenantContext, QuotaService quotas, PortalTokenHasher tokenHasher,
+            IdentityTenantSync identityTenantSync,
             @Value("${mission.frontend-url:http://localhost:8080}") String frontendUrl) {
         this.organizations = organizations; this.memberships = memberships;
         this.invitations = invitations; this.subscriptions = subscriptions;
         this.tenantContext = tenantContext; this.quotas = quotas;
-        this.tokenHasher = tokenHasher;
+        this.tokenHasher = tokenHasher; this.identityTenantSync = identityTenantSync;
         this.frontendUrl = frontendUrl.replaceAll("/$", "");
     }
 
@@ -96,7 +98,9 @@ public class SaasService {
         BillingSubscription subscription = subscriptions.findById(organization.getId())
                 .orElseGet(() -> subscriptions.save(new BillingSubscription(organization.getId())));
         TenantMembership membership = memberships.findByTenantIdAndUserId(organization.getId(), tenantContext.userId()).orElseThrow();
-        return overview(organization, membership, subscription);
+        boolean identityRefreshRequired = identityTenantSync.syncInvitedMember(
+                email, organization.getId(), organization.getName(), membership.getRole());
+        return overview(organization, membership, subscription, identityRefreshRequired);
     }
 
     @Transactional(readOnly = true)
@@ -187,10 +191,15 @@ public class SaasService {
 
     private OrganizationOverview overview(TenantOrganization organization, TenantMembership membership,
             BillingSubscription subscription) {
+        return overview(organization, membership, subscription, false);
+    }
+
+    private OrganizationOverview overview(TenantOrganization organization, TenantMembership membership,
+            BillingSubscription subscription, boolean identityRefreshRequired) {
         return new OrganizationOverview(organization.getId(), organization.getName(), organization.getSlug(),
                 organization.getPlan(), organization.getStatus(), membership.getRole(), subscription.getStripeCustomerId() != null,
                 subscription.getStatus(), quotas.usage(organization.getId()), organization.isOnboardingCompleted(),
-                publicFormPath(organization.getSlug(), null));
+                publicFormPath(organization.getSlug(), null), identityRefreshRequired);
     }
 
     private String normalizeName(String value) { return value.trim().replaceAll("\\s+", " "); }
@@ -213,7 +222,8 @@ public class SaasService {
             Instant expiresAt, String token) {}
     public record OrganizationOverview(UUID id, String name, String slug, Plan plan, String status,
             MembershipRole currentUserRole, boolean billingConfigured, String subscriptionStatus,
-            QuotaService.UsageSnapshot usage, boolean onboardingCompleted, String publicFormPath) {}
+            QuotaService.UsageSnapshot usage, boolean onboardingCompleted, String publicFormPath,
+            boolean identityRefreshRequired) {}
     public record PortalSettings(String organizationSlug, String organizationName, boolean portalTokenRequired,
             int requestRetentionDays, String publicFormPath, String shareableFormUrl) {}
     public record PortalTokenRotated(String portalToken, String shareableFormUrl) {}
