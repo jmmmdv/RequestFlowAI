@@ -57,6 +57,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/saas/invitations").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/saas/members", "/api/saas/invitations").hasRole("ADMIN")
                         .requestMatchers("/api/agent/**").hasAnyRole("MEMBER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/work-items/**").hasAnyRole("MEMBER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/work-items/**").hasAnyRole("MEMBER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/work-items/**").hasAnyRole("MEMBER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/work-items/**").hasAnyRole("MEMBER", "ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt ->

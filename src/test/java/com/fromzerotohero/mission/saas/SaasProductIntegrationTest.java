@@ -96,21 +96,49 @@ class SaasProductIntegrationTest {
     @Test
     void signedStripeCheckoutWebhookActivatesProPlan() throws Exception {
         long timestamp = Instant.now().getEpochSecond();
-        String payload = """
+        String checkoutPayload = """
                 {"id":"evt_checkout_01","type":"checkout.session.completed","data":{"object":{
                   "client_reference_id":"00000000-0000-0000-0000-000000000001",
                   "customer":"cus_test","subscription":"sub_test",
+                  "payment_status":"paid",
                   "metadata":{"plan":"PRO"}
                 }}}
                 """.trim();
         mvc.perform(post("/api/billing/webhook").contentType(MediaType.APPLICATION_JSON)
-                        .header("Stripe-Signature", "t=" + timestamp + ",v1=" + sign(timestamp + "." + payload))
-                        .content(payload))
+                        .header("Stripe-Signature", "t=" + timestamp + ",v1=" + sign(timestamp + "." + checkoutPayload))
+                        .content(checkoutPayload))
+                .andExpect(status().isOk());
+        org.assertj.core.api.Assertions.assertThat(organizations.findById(TENANT).orElseThrow().getPlan())
+                .isEqualTo(Plan.FREE);
+
+        String subscriptionPayload = """
+                {"id":"evt_checkout_01_active","type":"customer.subscription.updated","data":{"object":{
+                  "id":"sub_test","customer":"cus_test","status":"active","current_period_end":1893456000}}}
+                """.trim();
+        long activeTimestamp = Instant.now().getEpochSecond();
+        mvc.perform(post("/api/billing/webhook").contentType(MediaType.APPLICATION_JSON)
+                        .header("Stripe-Signature",
+                                "t=" + activeTimestamp + ",v1=" + sign(activeTimestamp + "." + subscriptionPayload))
+                        .content(subscriptionPayload))
                 .andExpect(status().isOk());
         org.assertj.core.api.Assertions.assertThat(organizations.findById(TENANT).orElseThrow().getPlan())
                 .isEqualTo(Plan.PRO);
         org.assertj.core.api.Assertions.assertThat(subscriptions.findById(TENANT).orElseThrow().getStripeCustomerId())
                 .isEqualTo("cus_test");
+    }
+
+    @Test
+    void unpaidCheckoutWebhookDoesNotActivatePlan() throws Exception {
+        signedWebhook("""
+                {"id":"evt_checkout_unpaid","type":"checkout.session.completed","data":{"object":{
+                  "client_reference_id":"00000000-0000-0000-0000-000000000001",
+                  "customer":"cus_unpaid","subscription":"sub_unpaid",
+                  "payment_status":"unpaid","metadata":{"plan":"PRO"}}}}
+                """).andExpect(status().isOk());
+        org.assertj.core.api.Assertions.assertThat(organizations.findById(TENANT).orElseThrow().getPlan())
+                .isEqualTo(Plan.FREE);
+        org.assertj.core.api.Assertions.assertThat(subscriptions.findById(TENANT).orElseThrow().getStripeCustomerId())
+                .isNull();
     }
 
     @Test
@@ -153,9 +181,14 @@ class SaasProductIntegrationTest {
         String payload = """
                 {"id":"evt_duplicate_integration","type":"checkout.session.completed","data":{"object":{
                   "client_reference_id":"00000000-0000-0000-0000-000000000001",
-                  "customer":"cus_dup","subscription":"sub_dup","metadata":{"plan":"PRO"}}}}
+                  "customer":"cus_dup","subscription":"sub_dup",
+                  "payment_status":"paid","metadata":{"plan":"PRO"}}}}
                 """.trim();
         signedWebhook(payload).andExpect(status().isOk());
+        signedWebhook("""
+                {"id":"evt_duplicate_integration_active","type":"customer.subscription.updated","data":{"object":{
+                  "id":"sub_dup","customer":"cus_dup","status":"active","current_period_end":1893456000}}}
+                """).andExpect(status().isOk());
         org.assertj.core.api.Assertions.assertThat(organizations.findById(TENANT).orElseThrow().getPlan())
                 .isEqualTo(Plan.PRO);
         signedWebhook(payload).andExpect(status().isOk());
@@ -168,7 +201,8 @@ class SaasProductIntegrationTest {
         signedWebhook("""
                 {"id":"evt_lifecycle_checkout","type":"checkout.session.completed","data":{"object":{
                   "client_reference_id":"00000000-0000-0000-0000-000000000001",
-                  "customer":"cus_lifecycle","subscription":"sub_lifecycle","metadata":{"plan":"PRO"}}}}
+                  "customer":"cus_lifecycle","subscription":"sub_lifecycle",
+                  "payment_status":"paid","metadata":{"plan":"PRO"}}}}
                 """).andExpect(status().isOk());
         signedWebhook("""
                 {"id":"evt_lifecycle_active","type":"customer.subscription.updated","data":{"object":{

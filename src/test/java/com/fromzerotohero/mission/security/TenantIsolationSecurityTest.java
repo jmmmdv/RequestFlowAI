@@ -143,6 +143,48 @@ class TenantIsolationSecurityTest {
     }
 
     @Test
+    void viewerCannotMutateWorkItems() throws Exception {
+        WorkItem item = workItems.save(
+                new WorkItem("Viewer read-only", "Details", Priority.LOW, WorkStatus.BACKLOG, TENANT_A));
+
+        mvc.perform(post("/api/work-items")
+                        .with(jwtFor(TENANT_A, "VIEWER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Forbidden\",\"priority\":\"LOW\",\"status\":\"BACKLOG\"}"))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(put("/api/work-items/{id}", item.getId())
+                        .with(jwtFor(TENANT_A, "VIEWER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Changed","description":"Nope","priority":"LOW","status":"BACKLOG"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(patch("/api/work-items/{id}/status", item.getId())
+                        .with(jwtFor(TENANT_A, "VIEWER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"DONE\"}"))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(delete("/api/work-items/{id}", item.getId()).with(jwtFor(TENANT_A, "VIEWER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void memberCanMutateOwnTenantWorkItems() throws Exception {
+        WorkItem item = workItems.save(
+                new WorkItem("Member item", "Details", Priority.LOW, WorkStatus.BACKLOG, TENANT_A));
+
+        mvc.perform(patch("/api/work-items/{id}/status", item.getId())
+                        .with(jwtFor(TENANT_A, "MEMBER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"DONE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DONE"));
+    }
+
+    @Test
     void tenantCannotMutateAnotherTenantsWorkItem() throws Exception {
         WorkItem tenantBItem = workItems.save(
                 new WorkItem("Tenant B item", "Hidden", Priority.HIGH, WorkStatus.READY, TENANT_B));

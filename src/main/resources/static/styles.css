@@ -78,6 +78,17 @@ main { display:grid; gap:24px; padding-bottom:64px; }
 .price-card h3 span { color:var(--muted); font-size:.8rem; font-weight:500; }
 .price-card ul { padding-left:20px; margin:0 0 24px; }
 .price-card .button-link { margin-top:auto; }
+.price-card button.button-link { width:100%; cursor:pointer; font:inherit; }
+.pricing-footer-cta { margin-top:28px; display:grid; gap:10px; max-width:520px; }
+.pricing-faq { padding-top:24px; }
+.faq-list { display:grid; gap:0; margin:28px 0 0; }
+.faq-item { padding:18px 0; border-bottom:1px solid var(--line); }
+.faq-item:last-child { border-bottom:0; }
+.faq-item dt { font-weight:800; margin-bottom:8px; }
+.faq-item dd { margin:0; color:var(--muted); font-size:.9rem; line-height:1.6; }
+.plan-pricing-line { margin:0; color:var(--accent); font-size:.84rem; font-weight:700; }
+.plan-pricing-line[hidden] { display:none; }
+.pricing-page-link { align-self:center; }
 .intake-panel { margin-top:36px; border-color:#2d6c60; background:linear-gradient(135deg,#102b2c,#111c2d 72%); scroll-margin-top:24px; }
 .intake-form { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:24px; }
 .intake-form .wide { grid-column:1/-1; }

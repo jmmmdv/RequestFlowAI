@@ -27,14 +27,6 @@ if (authState.configured && !demoMode) {
 }
 loginButton.addEventListener('click', login);
 logoutButton.addEventListener('click', logout);
-document.querySelector('#start-free').addEventListener('click', () => {
-  if (authenticationConfigured() && !authState.authenticated && !demoMode) return login();
-  if (authenticationConfigured() && authState.authenticated && !demoMode) {
-    document.querySelector('#workspace').scrollIntoView({ behavior: 'smooth' });
-    return;
-  }
-  document.querySelector('#workspace').scrollIntoView({ behavior: 'smooth' });
-});
 
 function publicFormHref(slug, token = '') {
   const href = `/public-request.html?organization=${encodeURIComponent(slug)}`;
@@ -271,6 +263,35 @@ async function api(path, options = {}) {
 }
 
 const planRank = { FREE: 0, PRO: 1, BUSINESS: 2 };
+const PLAN_PRICING = {
+  FREE: { label: 'Free', price: '$0', monthly: '$0/mo' },
+  PRO: { label: 'Pro', price: '$49', monthly: '$49/mo' },
+  BUSINESS: { label: 'Business', price: '$99', monthly: '$99/mo' },
+};
+
+function planPriceLabel(plan) {
+  const details = PLAN_PRICING[plan] ?? PLAN_PRICING.FREE;
+  return `${details.price}/month`;
+}
+
+function upgradeButtonLabel(plan) {
+  const details = PLAN_PRICING[plan];
+  return details ? `Upgrade to ${details.label} — ${details.monthly}` : 'Upgrade';
+}
+
+function scrollToWorkspace() {
+  document.querySelector('#workspace').scrollIntoView({ behavior: 'smooth' });
+}
+
+function handleStartFree() {
+  if (authenticationConfigured() && !authState.authenticated && !demoMode) return login();
+  scrollToWorkspace();
+}
+
+document.querySelector('#start-free').addEventListener('click', handleStartFree);
+for (const trigger of document.querySelectorAll('.pricing-cta-start')) {
+  trigger.addEventListener('click', handleStartFree);
+}
 const classificationLabels = {
   QUALITY_ENGINEERING: 'Quality or issue',
   DELIVERY_AUTOMATION: 'Delivery or release',
@@ -366,11 +387,20 @@ function renderUsage(organization) {
 
   const note = document.querySelector('#plan-note');
   for (const button of document.querySelectorAll('.upgrade')) {
-    button.hidden = planRank[button.dataset.plan] <= planRank[organization.plan];
+    const plan = button.dataset.plan;
+    button.textContent = upgradeButtonLabel(plan);
+    button.hidden = planRank[plan] <= planRank[organization.plan];
   }
   const onTopPlan = planRank[organization.plan] >= planRank.BUSINESS;
   note.hidden = !onTopPlan;
-  if (onTopPlan) note.textContent = 'You are on the top plan.';
+  if (onTopPlan) {
+    note.textContent = `You are on Business (${PLAN_PRICING.BUSINESS.monthly}). Manage billing through the billing portal.`;
+  }
+
+  const pricingLine = document.querySelector('#plan-pricing-line');
+  const currentPricing = PLAN_PRICING[organization.plan] ?? PLAN_PRICING.FREE;
+  pricingLine.textContent = `${currentPricing.label} plan · ${currentPricing.price}/month · cancel anytime`;
+  pricingLine.hidden = false;
 
   document.querySelector('#team-panel').hidden = organization.currentUserRole !== 'ADMIN';
   document.querySelector('#portal-panel').hidden = organization.currentUserRole !== 'ADMIN';
@@ -387,10 +417,12 @@ async function loadOrganization() {
   try {
     const organization = await api('/api/saas/organization');
     document.querySelector('#organization-name').textContent = organization.name;
-    document.querySelector('#plan-badge').textContent = organization.plan;
+    document.querySelector('#plan-badge').textContent =
+      `${organization.plan} · ${planPriceLabel(organization.plan)}`;
     document.querySelector('#usage-summary').textContent =
       `${organization.usage.workItemsUsed}/${organization.usage.workItemsLimit} work items · ` +
-      `${organization.usage.agentRunsUsed}/${organization.usage.agentRunsLimit} assisted plans this month`;
+      `${organization.usage.agentRunsUsed}/${organization.usage.agentRunsLimit} assisted plans this month · ` +
+      `${PLAN_PRICING[organization.plan]?.label ?? organization.plan} ${PLAN_PRICING[organization.plan]?.price ?? ''}/month`;
     renderUsage(organization);
     if (organization.slug && !queryParameters.get('organization')) {
       activeIntakeSlug = organization.slug;
@@ -402,6 +434,7 @@ async function loadOrganization() {
     document.querySelector('#usage-summary').textContent = error.message;
     document.querySelector('#usage-meters').hidden = true;
     document.querySelector('#saas-meta').hidden = true;
+    document.querySelector('#plan-pricing-line').hidden = true;
   }
 }
 

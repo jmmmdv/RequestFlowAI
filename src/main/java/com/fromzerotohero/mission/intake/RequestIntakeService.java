@@ -28,11 +28,13 @@ public class RequestIntakeService {
     private final TenantContext tenantContext;
     private final PublicIntakeProperties properties;
     private final PortalTokenHasher tokenHasher;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public RequestIntakeService(TenantOrganizationRepository organizations,
             RequestSubmissionRepository submissions, WorkItemRepository workItems,
             RuleBasedRequestClassifier classifier, QuotaService quotas, TenantContext tenantContext,
-            PublicIntakeProperties properties, PortalTokenHasher tokenHasher) {
+            PublicIntakeProperties properties, PortalTokenHasher tokenHasher,
+            org.springframework.context.ApplicationEventPublisher events) {
         this.organizations = organizations;
         this.submissions = submissions;
         this.workItems = workItems;
@@ -41,6 +43,7 @@ public class RequestIntakeService {
         this.tenantContext = tenantContext;
         this.properties = properties;
         this.tokenHasher = tokenHasher;
+        this.events = events;
     }
 
     @Transactional(readOnly = true)
@@ -67,6 +70,10 @@ public class RequestIntakeService {
                 idempotencyKey, normalize(request.requesterName()), request.requesterEmail().trim().toLowerCase(Locale.ROOT),
                 normalize(request.companyName()), title, details, request.category(), request.urgency(),
                 classification, workItem.getId()));
+        events.publishEvent(new NewPublicRequestEvent(organization.getId(), organization.getName(),
+                submission.getId(), submission.getReferenceNumber(), submission.getRequesterName(),
+                submission.getRequesterEmail(), submission.getCompanyName(), submission.getTitle(),
+                submission.getCategory(), submission.getSuggestedPriority()));
         return receipt(submission, false);
     }
 

@@ -3,22 +3,27 @@ import { expect, test } from '@playwright/test';
 test('shows the customer journey and honest pricing', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page).toHaveTitle('RequestFlow AI — Turn requests into trackable work');
+  await expect(page).toHaveTitle('RequestFlow AI — The request inbox for small service teams');
   await expect(page.getByRole('heading', { name: 'Never lose another customer request' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'One simple home for incoming work' })).toBeVisible();
+  await expect(page.locator('.hero-kicker')).toContainText(/request inbox for small service teams/i);
+  await expect(page.getByRole('heading', { name: 'The request inbox your team actually needs' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'From scattered messages to clear next steps' })).toBeVisible();
   await expect(page.locator('.workflow-grid article')).toHaveCount(5);
   await expect(page.locator('#benefits')).toContainText('Fewer lost requests');
   await expect(page.locator('#benefits')).toContainText('Simple approvals');
   await expect(page.locator('#pricing')).toContainText('FREE');
-  await expect(page.locator('#pricing')).toContainText('Pilot pricing coming soon');
+  await expect(page.locator('#pricing')).toContainText('$49');
+  await expect(page.locator('#pricing')).toContainText('$99');
+  await expect(page.locator('#pricing-faq')).toContainText('Can I cancel anytime?');
+  await expect(page.getByRole('link', { name: 'Upgrade to Pro' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Book founder setup call' }).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: /Send a request to/ })).toContainText('Local Development');
 });
 
 test('keeps the working dashboard accessible from the landing page', async ({ page }) => {
   await page.goto('/');
 
-  await page.locator('header').getByRole('link', { name: 'View demo' }).click();
+  await page.locator('header').getByRole('link', { name: 'Dashboard' }).click();
   await expect(page).toHaveURL(/#workspace$/);
   await expect(page.getByRole('heading', { name: 'Keep every request moving' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Trackable work' })).toBeVisible();
@@ -88,7 +93,8 @@ test('shows the authenticated SaaS organization plan and quota usage', async ({ 
   await page.goto('/');
 
   await expect(page.locator('#organization-name')).toHaveText('Local Development');
-  await expect(page.locator('#plan-badge')).toHaveText('FREE');
+  await expect(page.locator('#plan-badge')).toContainText('FREE');
+  await expect(page.locator('#plan-badge')).toContainText('$0/month');
   await expect(page.locator('#usage-summary')).toContainText('/25 work items');
   await expect(page.locator('#usage-summary')).toContainText('/10 assisted plans this month');
 });
@@ -100,7 +106,9 @@ test('renders quota meters and offers an upgrade on the free plan', async ({ pag
   await expect(page.locator('#work-items-figure')).toContainText('/ 25');
   await expect(page.locator('#agent-runs-figure')).toContainText('/ 10');
   await expect(page.locator('#saas-meta')).toContainText('ADMIN');
-  await expect(page.getByRole('button', { name: 'Upgrade to Pro' })).toBeVisible();
+  await expect(page.locator('#plan-pricing-line')).toContainText('Free plan · $0/month');
+  await expect(page.getByRole('button', { name: 'Upgrade to Pro — $49/mo' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Upgrade to Business — $99/mo' })).toBeVisible();
 });
 
 test('lists members and creates a teammate invitation', async ({ page }) => {

@@ -54,6 +54,7 @@ class BillingServiceTest {
         organizations = Mockito.mock(TenantOrganizationRepository.class);
         tenantContext = Mockito.mock(TenantContext.class);
         when(tenantContext.tenantId()).thenReturn(TENANT);
+        when(subscriptions.findById(TENANT)).thenReturn(Optional.empty());
 
         RestClient.Builder builder = RestClient.builder().baseUrl("https://api.stripe.com/v1");
         stripeServer = MockRestServiceServer.bindTo(builder).build();
@@ -116,6 +117,69 @@ class BillingServiceTest {
     }
 
     @Test
+    void createCheckoutRejectsExistingEntitledSubscription() {
+        BillingSubscription existing = new BillingSubscription(TENANT);
+        existing.synchronize("cus_existing", "sub_existing", Plan.PRO, "ACTIVE", null);
+        when(subscriptions.findById(TENANT)).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> billingWith("price_pro", "price_business")
+                .createCheckout(new BillingService.CheckoutRequest(Plan.BUSINESS, "checkout-key-05")))
+                .isInstanceOf(SaasException.class)
+                .hasMessageContaining("billing portal");
+        stripeServer.verify();
+    }
+
+    @Test
+    void checkoutWithUnpaidPaymentStatusDoesNotActivatePlan() throws Exception {
+        when(webhookEvents.existsById("evt_unpaid")).thenReturn(false);
+
+        String payload = """
+                {"id":"evt_unpaid","type":"checkout.session.completed","data":{"object":{
+                  "client_reference_id":"00000000-0000-0000-0000-000000000009",
+                  "customer":"cus_unpaid","subscription":"sub_unpaid",
+                  "payment_status":"unpaid","metadata":{"plan":"PRO"}}}}
+                """.trim();
+        billingWith("price_pro", "price_business").processWebhook(payload, signedHeader(payload));
+
+        verify(subscriptions, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(organizations, never()).findById(any());
+    }
+
+    @Test
+    void paidCheckoutStoresSubscriptionButDefersPlanUntilSubscriptionWebhook() throws Exception {
+        when(webhookEvents.existsById("evt_paid_checkout")).thenReturn(false);
+        BillingSubscription pending = new BillingSubscription(TENANT);
+        when(subscriptions.findById(TENANT)).thenReturn(Optional.of(pending));
+        TenantOrganization organization = new TenantOrganization(TENANT, "Acme", "acme");
+        when(organizations.findById(TENANT)).thenReturn(Optional.of(organization));
+
+        String checkoutPayload = """
+                {"id":"evt_paid_checkout","type":"checkout.session.completed","data":{"object":{
+                  "client_reference_id":"00000000-0000-0000-0000-000000000009",
+                  "customer":"cus_paid","subscription":"sub_paid",
+                  "payment_status":"paid","metadata":{"plan":"PRO"}}}}
+                """.trim();
+        billingWith("price_pro", "price_business").processWebhook(checkoutPayload, signedHeader(checkoutPayload));
+
+        assertThat(organization.getPlan()).isEqualTo(Plan.FREE);
+        assertThat(pending.getStripeCustomerId()).isEqualTo("cus_paid");
+        assertThat(pending.getStripeSubscriptionId()).isEqualTo("sub_paid");
+        assertThat(pending.getPlan()).isEqualTo(Plan.PRO);
+        assertThat(pending.getStatus()).isEqualTo("PENDING");
+
+        when(subscriptions.findByStripeSubscriptionId("sub_paid")).thenReturn(Optional.of(pending));
+        String subscriptionPayload = """
+                {"id":"evt_paid_active","type":"customer.subscription.updated","data":{"object":{
+                  "id":"sub_paid","customer":"cus_paid","status":"active","current_period_end":1893456000}}}
+                """.trim();
+        when(webhookEvents.existsById("evt_paid_active")).thenReturn(false);
+        billingWith("price_pro", "price_business").processWebhook(subscriptionPayload, signedHeader(subscriptionPayload));
+
+        assertThat(organization.getPlan()).isEqualTo(Plan.PRO);
+        assertThat(pending.getStatus()).isEqualTo("ACTIVE");
+    }
+
+    @Test
     void trialingSubscriptionKeepsTheCurrentPaidPlan() throws Exception {
         BillingSubscription existing = new BillingSubscription(TENANT);
         existing.synchronize("cus_x", "sub_x", Plan.PRO, "ACTIVE", null);
@@ -143,7 +207,8 @@ class BillingServiceTest {
         String payload = """
                 {"id":"evt_duplicate","type":"checkout.session.completed","data":{"object":{
                   "client_reference_id":"00000000-0000-0000-0000-000000000009",
-                  "customer":"cus_dup","subscription":"sub_dup","metadata":{"plan":"PRO"}}}}
+                  "customer":"cus_dup","subscription":"sub_dup",
+                  "payment_status":"paid","metadata":{"plan":"PRO"}}}}
                 """.trim();
         billingWith("price_pro", "price_business").processWebhook(payload, signedHeader(payload));
         verify(subscriptions, never()).save(org.mockito.ArgumentMatchers.any());

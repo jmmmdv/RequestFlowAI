@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -24,6 +25,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class BillingService {
+    private static final Set<String> SETTLED_CHECKOUT_PAYMENT_STATUSES = Set.of("paid", "no_payment_required");
+    private static final Set<String> ENTITLED_SUBSCRIPTION_STATUSES = Set.of("ACTIVE", "TRIALING");
+
     private final BillingSubscriptionRepository subscriptions;
     private final BillingWebhookEventRepository webhookEvents;
     private final TenantOrganizationRepository organizations;
@@ -73,6 +77,12 @@ public class BillingService {
         };
         requireConfigured(priceId, request.plan() + " Stripe price");
         UUID tenantId = tenantContext.tenantId();
+        BillingSubscription existing = subscriptions.findById(tenantId).orElse(null);
+        if (existing != null && hasEntitledStripeSubscription(existing)) {
+            throw new SaasException(HttpStatus.CONFLICT,
+                    "An active Stripe subscription already exists for this organization. "
+                            + "Manage plan changes through the billing portal.");
+        }
         var form = new LinkedMultiValueMap<String, String>();
         form.add("mode", "subscription");
         form.add("line_items[0][price]", priceId);
@@ -116,6 +126,11 @@ public class BillingService {
     }
 
     private void synchronizeCheckout(JsonNode object) {
+        String paymentStatus = text(object, "payment_status");
+        if (paymentStatus == null
+                || !SETTLED_CHECKOUT_PAYMENT_STATUSES.contains(paymentStatus.toLowerCase(Locale.ROOT))) {
+            return;
+        }
         UUID tenantId = parseTenant(object.path("client_reference_id").asText());
         Plan plan = parsePlan(object.path("metadata").path("plan").asText());
         BillingSubscription subscription = subscriptions.findById(tenantId)
@@ -123,7 +138,6 @@ public class BillingService {
         subscription.synchronize(text(object, "customer"), text(object, "subscription"), plan,
                 "PENDING", null);
         subscriptions.save(subscription);
-        organizations.findById(tenantId).ifPresent(organization -> organization.changePlan(plan));
     }
 
     private void synchronizeSubscription(JsonNode object) {
@@ -131,11 +145,19 @@ public class BillingService {
         BillingSubscription subscription = subscriptions.findByStripeSubscriptionId(subscriptionId).orElse(null);
         if (subscription == null) return;
         String status = text(object, "status").toUpperCase(Locale.ROOT);
-        Plan effectivePlan = status.equals("ACTIVE") || status.equals("TRIALING") ? subscription.getPlan() : Plan.FREE;
+        Plan effectivePlan = ENTITLED_SUBSCRIPTION_STATUSES.contains(status) ? subscription.getPlan() : Plan.FREE;
         Instant periodEnd = object.path("current_period_end").canConvertToLong()
                 ? Instant.ofEpochSecond(object.path("current_period_end").asLong()) : null;
         subscription.synchronize(text(object, "customer"), subscriptionId, effectivePlan, status, periodEnd);
+        subscriptions.save(subscription);
         organizations.findById(subscription.getTenantId()).ifPresent(organization -> organization.changePlan(effectivePlan));
+    }
+
+    private boolean hasEntitledStripeSubscription(BillingSubscription subscription) {
+        if (subscription.getStripeSubscriptionId() == null || subscription.getStripeSubscriptionId().isBlank()) {
+            return false;
+        }
+        return ENTITLED_SUBSCRIPTION_STATUSES.contains(subscription.getStatus());
     }
 
     private void verifySignature(String payload, String header) {
