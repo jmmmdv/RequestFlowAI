@@ -29,7 +29,7 @@ jobs:
       - name: Build container image
         run: docker build -t requestflow-ai:ci .
       - name: Scan container image
-        uses: aquasec/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: requestflow-ai:ci
           severity: HIGH,CRITICAL
