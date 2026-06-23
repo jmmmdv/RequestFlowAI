@@ -46,7 +46,7 @@ class PostgreSqlApiIntegrationTest {
         String version = jdbc.queryForObject(
                 "select version from flyway_schema_history where success order by installed_rank desc limit 1",
                 String.class);
-        assertThat(version).isEqualTo("7");
+        assertThat(version).isEqualTo("8");
 
         Integer safetyColumns = jdbc.queryForObject("""
                 select count(*) from information_schema.columns
