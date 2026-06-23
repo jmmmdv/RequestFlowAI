@@ -47,6 +47,15 @@ public class TenantContext {
         return email == null || email.isBlank() ? null : email.trim().toLowerCase();
     }
 
+    public String requireEmail() {
+        String email = email();
+        if (!securityEnabled) return email;
+        if (email == null) {
+            throw new AccessDeniedException("A valid email claim is required");
+        }
+        return email;
+    }
+
     public String organizationName() {
         if (!securityEnabled) return "Local Development";
         String name = authenticatedJwt().getClaimAsString("organization_name");

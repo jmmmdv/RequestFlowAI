@@ -10,14 +10,21 @@
         <relativePath/>
     </parent>
     <groupId>com.fromzerotohero</groupId>
-    <artifactId>automation-mission-control</artifactId>
+    <artifactId>requestflow-ai</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>Automation Mission Control</name>
-    <description>One project for software development, intelligent automation, and agentic AI.</description>
+    <name>RequestFlow AI</name>
+    <description>SaaS MVP foundation for turning business requests into trackable, tenant-safe work.</description>
+    <url>https://github.com/jmmmdv/RequestFlowAI</url>
+    <scm>
+        <url>https://github.com/jmmmdv/RequestFlowAI</url>
+        <connection>scm:git:https://github.com/jmmmdv/RequestFlowAI.git</connection>
+        <developerConnection>scm:git:https://github.com/jmmmdv/RequestFlowAI.git</developerConnection>
+    </scm>
     <properties>
         <java.version>21</java.version>
         <springdoc.version>2.8.17</springdoc.version>
         <jacoco.version>0.8.13</jacoco.version>
+        <aws.sdk.version>2.29.51</aws.sdk.version>
     </properties>
     <dependencies>
         <dependency>
@@ -84,6 +91,11 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>cognitoidentityprovider</artifactId>
+            <version>${aws.sdk.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

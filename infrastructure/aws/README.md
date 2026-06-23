@@ -1,4 +1,4 @@
-# AWS production deployment
+# RequestFlow AI AWS production deployment
 
 The CloudFormation stack deploys one production-shaped vertical slice:
 
@@ -14,6 +14,11 @@ The CloudFormation stack deploys one production-shaped vertical slice:
 
 This stack creates billable resources, notably RDS, App Runner, and a NAT Gateway. Deploy it in a
 sandbox account with a budget alarm, and delete test stacks when the exercise is complete.
+
+The template retains several original physical resource names (`automation-mission-control` and
+`mission-control-*`). Renaming deployed App Runner, Cognito, network, alarm, or database resources
+can replace them, so the product repositioning does not silently mutate those identifiers. Treat
+them as compatibility names and plan any production resource migration separately.
 
 ## Build and deploy
 
@@ -51,12 +56,14 @@ the stack outputs for its URL, Cognito client/domain, dashboard, alarm topic, an
 endpoint. Configure the Vercel project from those outputs:
 
 ```bash
-vercel env add MISSION_API_BASE_URL production
-vercel env add MISSION_COGNITO_DOMAIN production
-vercel env add MISSION_COGNITO_CLIENT_ID production
+vercel env add REQUESTFLOW_API_BASE_URL production
+vercel env add REQUESTFLOW_COGNITO_DOMAIN production
+vercel env add REQUESTFLOW_COGNITO_CLIENT_ID production
+vercel env add REQUESTFLOW_PUBLIC_ORGANIZATION_SLUG production
 ```
 
-These are public browser configuration values, not secrets. Redeploy Vercel after adding them.
+These are public browser configuration values, not secrets. The original `MISSION_*` aliases remain
+supported for existing deployments. Redeploy Vercel after adding or changing them.
 
 ## Optional Stripe test billing
 

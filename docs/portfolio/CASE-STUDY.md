@@ -1,81 +1,109 @@
-# Case study: Automation Mission Control
+# Case study: RequestFlow AI
 
-> A production-shaped, multi-tenant SaaS where a team manages a delivery board and a
-> bounded planning agent turns goals into attributable, auditable work.
+> A production-shaped SaaS MVP foundation that turns incoming business requests into trackable,
+> tenant-safe work while preserving approval and audit evidence.
 
-**Role:** sole engineer (design, build, test, deploy) · **Stack:** Java 21, Spring Boot 3.5,
-PostgreSQL, Playwright, AWS, Stripe · **Status:** working software with an enforced test gate.
+**Role:** sole engineer (product direction, design, build, test, deployment preparation) ·
+**Stack:** Java 21, Spring Boot 3.5, PostgreSQL, Playwright, AWS, Stripe ·
+**Status:** working foundation and pilot-ready demo; not yet a launched commercial product.
 
-- Live demo: _add your Vercel URL here_
-- Source: https://github.com/jmmmdv/FromZeroToHero
+- Live demo: https://from-zero-to-hero-azure.vercel.app
+- Source: https://github.com/jmmmdv/RequestFlowAI
+- Investor one-pager: [INVESTOR-ONE-PAGER.md](INVESTOR-ONE-PAGER.md)
 - API docs: `/swagger-ui.html` on the running service
 
 ---
 
-## The problem
+## The product problem
 
-Most portfolio repositories are disconnected tutorials that prove nothing about production
-readiness. I wanted one coherent product that shows how the concerns a real SaaS team cares
-about — security, multi-tenancy, billing, testing, observability, and safe automation —
-actually fit together.
+Small businesses and service teams often receive work through email, WhatsApp, text messages,
+calls, and disconnected forms. Requests get lost, urgency is inconsistent, and follow-up becomes
+manual. Enterprise service-management products can be too expensive or complicated for teams that
+first need one reliable request workspace.
 
-## What I built
+RequestFlow AI is designed to collect requests, suggest what is urgent, turn requests into
+trackable work, and give the team a clear status and audit history. The initial market is small
+service businesses, agencies, consultants, and small IT/support teams.
 
-- A **multi-tenant REST API** (Spring Web + HATEOAS) for a work-delivery board with validation
+## Why this repository exists
+
+The repository has two deliberate jobs:
+
+1. Build a credible SaaS foundation that can grow into a paid request-management product.
+2. Provide inspectable evidence of production-shaped Java/Spring Boot engineering.
+
+That dual purpose is why product work sits beside tenant-isolation tests, billing boundaries,
+database migrations, browser journeys, infrastructure as code, and operational documentation.
+
+## What is implemented
+
+- A **public request portal** that resolves the destination organization by server-owned slug,
+  stores the original request, safely retries through tenant-scoped idempotency, and creates a
+  quota-checked work item without accepting a client-submitted tenant ID.
+- **Rule-based triage** that suggests SUPPORT/BILLING/SALES/CHANGE/GENERAL category, urgency,
+  internal summary, and next action without pretending to use an LLM.
+- A **tenant-scoped work-management API** (Spring Web + HATEOAS) with validation, status tracking,
   and RFC 9457-style problem responses.
-- A **trusted tenant boundary**: identity comes only from a verified JWT claim, enforced at the
-  repository layer, with tests proving data cannot cross organizations.
-- A **bounded planning agent** that classifies a goal, enforces a safety policy and a tool-call
-  budget, pauses high-impact actions for human approval, and writes an audit record (tenant,
-  user, correlation ID, outcome) for every run.
-- A **SaaS control plane**: organizations, memberships, roles, expiring invitations, FREE/PRO/
-  BUSINESS plan quotas, and Stripe Checkout with signature-verified webhooks.
-- A **single delivery gate**: REST, database-consistency, security, contract, and Playwright
-  browser tests, plus an 80% coverage floor that fails the build when missed.
-- A **path to production**: Flyway migrations that run identically on H2, CI PostgreSQL, and
-  RDS; Docker; GitHub Actions and Jenkins; CloudFormation; and observability with
-  OpenTelemetry, Grafana, and CloudWatch.
+- A **trusted tenant boundary**: identity comes from a verified JWT claim, repository queries are
+  tenant-scoped, and automated tests prove organizations cannot access each other's work.
+- A **rule-based planning assistant** that classifies a request-like goal, enforces a safety policy
+  and tool budget, suggests urgency through bounded rules, pauses high-impact actions for approval,
+  and records tenant, user, correlation ID, and outcome.
+- A **SaaS control plane** with organizations, memberships, roles, expiring invitations,
+  FREE/PRO/BUSINESS quotas, Stripe Checkout, and signature-verified webhooks.
+- A **single delivery gate** covering REST behavior, API/database agreement, tenant security,
+  contracts, PostgreSQL migrations, Playwright journeys, and an 80% line-coverage floor.
+- A **production path** through Docker, GitHub Actions, Jenkins, CloudFormation, private RDS,
+  Cognito configuration, OpenTelemetry, Grafana, CloudWatch, SLOs, and runbooks.
 
-## Key engineering decisions (the interview material)
+## Key decisions
 
 | Decision | Why it matters |
 |---|---|
-| Tenant ID comes from a verified JWT claim, never from request input | Prevents the most common multi-tenant data-leak class; proven by `TenantIsolationSecurityTest` |
-| The agent is deterministic and rule-based (for now) | Makes orchestration, guardrails, and evaluation testable before adding an LLM's cost and non-determinism |
-| High-impact agent actions require human approval, and approval is idempotent | Safety boundary plus safe-to-retry semantics; no duplicate side effects |
-| Stripe webhooks are verified with constant-time HMAC and a timestamp tolerance | Rejects forged and replayed billing events |
-| One Flyway migration history across H2, CI, and PostgreSQL | The schema you test is the schema you ship |
-| 80% coverage gate enforced in `verify` | Coverage cannot silently erode on `main` |
+| Tenant ID comes from a verified JWT claim, never request input | Prevents a common multi-tenant data-leak class; proven by `TenantIsolationSecurityTest` |
+| The assistant is deterministic and rule-based today | Makes guardrails and evaluation testable before adding LLM cost and non-determinism |
+| High-impact actions require idempotent human approval | Creates a safety boundary without duplicate side effects |
+| Stripe webhooks use constant-time HMAC verification and timestamp tolerance | Rejects forged and replayed billing events |
+| One Flyway history runs on H2 and PostgreSQL | The schema being tested is the schema intended for deployment |
+| JaCoCo fails `verify` below 80% line coverage | Coverage cannot silently erode on `main` |
+| Product gaps stay visible in the roadmap | Prevents a strong portfolio from being mistaken for a completed launch |
 
-## Results / evidence
+## Evidence and results
 
-- **Tenant isolation** verified by automated security tests (list and direct-ID access).
-- **API/DB agreement** checked by comparing HTTP JSON against raw SQL.
-- **Migrations on real PostgreSQL** via Testcontainers.
-- **Agent safety** gated by a 27-case golden/adversarial evaluation suite in CI.
-- **End-to-end journeys** (dashboard, agent approval, quota meters, team invitations, REST CRUD)
-  covered by Playwright.
-- **Build quality** enforced by JaCoCo at 80% line coverage.
+- Tenant isolation is verified for collection and direct-ID access.
+- HTTP responses are compared with persisted rows through raw SQL.
+- Flyway migrations and API persistence run on PostgreSQL via Testcontainers.
+- Assistant safety behavior is gated by a 27-case golden/adversarial evaluation suite.
+- Public intake, request inbox, work creation, approval, quota, invitation, status, and CRUD
+  journeys are covered by Playwright.
+- Build quality is enforced by an 80% JaCoCo line-coverage floor.
 
-## Skills this demonstrates
+These are engineering results, not customer traction metrics. No paying customers or production
+payment volume are claimed.
 
-- Backend: Java 21, Spring Boot, Spring Web, Spring Data JPA, Spring Security, OAuth2 resource
-  server, HATEOAS, Flyway.
-- Quality: JUnit, integration tests, Testcontainers, Playwright, contract tests, coverage gating.
-- Product/SaaS: multi-tenancy, RBAC, invitations, plan quotas, Stripe billing.
-- DevOps/Cloud: Docker, GitHub Actions, Jenkins, AWS App Runner/RDS, CloudFormation, observability.
-- Automation/AI: bounded agent design, guardrails, idempotency, audit, evaluation.
+## Honest MVP boundary
 
-## Honest scope
+The application is a **SaaS MVP foundation**, not the complete RequestFlow AI customer journey yet.
 
-- The planning agent is intentionally **rule-based**, not an LLM. The extension path is documented
-  in `docs/architecture/AGENTIC-AI.md`.
-- The default public deployment is a **browser-local portfolio preview** with disposable data; the
-  same build becomes the production UI when the documented environment variables are set
-  (see `docs/saas/SAAS-LAUNCH.md`).
-- A few operational drills (restore drill, live Cognito/Stripe identity-transfer) are labelled as
-  pending in the README roadmap rather than claimed as done.
+Implemented now:
 
-See the [demo script](DEMO-SCRIPT.md) for a rehearsed 5-minute walkthrough and likely interview
-questions, and the [job-search kit](JOB-SEARCH-KIT.md) for ready-to-use LinkedIn, resume, and
-outreach copy.
+- responsive landing, pricing, and public request intake;
+- original-request storage plus rule-based category, priority, summary, and next action;
+- organization-scoped work tracking;
+- team roles and invitations;
+- rule-based planning, priority keywords, approvals, and audit history;
+- plan quotas and Stripe-ready billing boundaries;
+- local demo and production-shaped deployment configuration.
+
+Still required for a complete first-pilot flow:
+
+- production rate limiting, bot protection, privacy, and retention controls for public intake;
+- production-backed Start Free onboarding;
+- real Cognito, invitation-transfer, Stripe test, and restore drills;
+- pilot onboarding, privacy, support, and feedback documentation.
+
+The assistant is rule-based, not an LLM. The extension path is documented in
+`docs/architecture/AGENTIC-AI.md`. The default public demo uses browser-local disposable data.
+
+See the [demo script](DEMO-SCRIPT.md) for a product-first five-minute walkthrough and the
+[job-search kit](JOB-SEARCH-KIT.md) for evidence-backed portfolio copy.

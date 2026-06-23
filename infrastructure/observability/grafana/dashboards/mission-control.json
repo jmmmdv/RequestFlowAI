@@ -2,17 +2,17 @@
   "annotations": {"list": []},
   "editable": true,
   "panels": [
-    {"type":"stat","title":"Request rate","id":1,"gridPos":{"h":6,"w":8,"x":0,"y":0},"targets":[{"expr":"sum(rate(http_server_requests_seconds_count{application=\"automation-mission-control\"}[5m]))","legendFormat":"requests/s"}]},
-    {"type":"stat","title":"5xx rate","id":2,"gridPos":{"h":6,"w":8,"x":8,"y":0},"targets":[{"expr":"sum(rate(http_server_requests_seconds_count{application=\"automation-mission-control\",status=~\"5..\"}[5m]))","legendFormat":"errors/s"}]},
-    {"type":"timeseries","title":"p95 latency","id":3,"gridPos":{"h":8,"w":8,"x":16,"y":0},"targets":[{"expr":"histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"automation-mission-control\"}[5m])))","legendFormat":"p95 seconds"}]},
-    {"type":"timeseries","title":"JVM heap","id":4,"gridPos":{"h":8,"w":12,"x":0,"y":8},"targets":[{"expr":"sum(jvm_memory_used_bytes{application=\"automation-mission-control\",area=\"heap\"})","legendFormat":"used"},{"expr":"sum(jvm_memory_max_bytes{application=\"automation-mission-control\",area=\"heap\"})","legendFormat":"max"}]},
-    {"type":"timeseries","title":"Database pool","id":5,"gridPos":{"h":8,"w":12,"x":12,"y":8},"targets":[{"expr":"hikaricp_connections_active{application=\"automation-mission-control\"}","legendFormat":"active"},{"expr":"hikaricp_connections_pending{application=\"automation-mission-control\"}","legendFormat":"pending"}]}
+    {"type":"stat","title":"Request rate","id":1,"gridPos":{"h":6,"w":8,"x":0,"y":0},"targets":[{"expr":"sum(rate(http_server_requests_seconds_count{application=\"requestflow-ai\"}[5m]))","legendFormat":"requests/s"}]},
+    {"type":"stat","title":"5xx rate","id":2,"gridPos":{"h":6,"w":8,"x":8,"y":0},"targets":[{"expr":"sum(rate(http_server_requests_seconds_count{application=\"requestflow-ai\",status=~\"5..\"}[5m]))","legendFormat":"errors/s"}]},
+    {"type":"timeseries","title":"p95 latency","id":3,"gridPos":{"h":8,"w":8,"x":16,"y":0},"targets":[{"expr":"histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"requestflow-ai\"}[5m])))","legendFormat":"p95 seconds"}]},
+    {"type":"timeseries","title":"JVM heap","id":4,"gridPos":{"h":8,"w":12,"x":0,"y":8},"targets":[{"expr":"sum(jvm_memory_used_bytes{application=\"requestflow-ai\",area=\"heap\"})","legendFormat":"used"},{"expr":"sum(jvm_memory_max_bytes{application=\"requestflow-ai\",area=\"heap\"})","legendFormat":"max"}]},
+    {"type":"timeseries","title":"Database pool","id":5,"gridPos":{"h":8,"w":12,"x":12,"y":8},"targets":[{"expr":"hikaricp_connections_active{application=\"requestflow-ai\"}","legendFormat":"active"},{"expr":"hikaricp_connections_pending{application=\"requestflow-ai\"}","legendFormat":"pending"}]}
   ],
   "refresh": "15s",
   "schemaVersion": 40,
   "tags": ["portfolio", "spring-boot", "slo"],
   "templating": {"list": []},
   "time": {"from": "now-1h", "to": "now"},
-  "title": "Automation Mission Control",
+  "title": "RequestFlow AI",
   "uid": "mission-control"
 }

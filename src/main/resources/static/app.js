@@ -1,15 +1,23 @@
-import { apiBaseUrl, authenticationConfigured, getAccessToken, initializeAuth, login, logout } from './auth.js';
+import { apiBaseUrl, authenticationConfigured, getAccessToken, initializeAuth, login, logout, publicOrganizationSlug } from './auth.js';
 
 const board = document.querySelector('#board');
 const errorBox = document.querySelector('#error');
 const runBoard = document.querySelector('#run-board');
 const runError = document.querySelector('#run-error');
-const demoMode = new URLSearchParams(location.search).has('demo') ||
+const requestBoard = document.querySelector('#request-board');
+const requestError = document.querySelector('#request-error');
+const queryParameters = new URLSearchParams(location.search);
+let activeIntakeSlug = queryParameters.get('organization') || publicOrganizationSlug();
+const portalAccessToken = queryParameters.get('token') || '';
+document.querySelector('#share-form-link').href = publicFormHref(activeIntakeSlug, portalAccessToken);
+const demoMode = queryParameters.has('demo') ||
   (location.hostname.endsWith('.vercel.app') && !authenticationConfigured());
-const demoStateKey = 'mission-control-demo-v1';
+const demoStateKey = 'requestflow-ai-demo-v1';
+const legacyDemoStateKey = 'mission-control-demo-v1';
 const authState = await initializeAuth().catch((error) => ({ authenticated: false, configured: true, error }));
 const loginButton = document.querySelector('#login');
 const logoutButton = document.querySelector('#logout');
+const workspaceAvailable = !authenticationConfigured() || authState.authenticated || demoMode;
 
 if (authState.configured && !demoMode) {
   loginButton.hidden = authState.authenticated;
@@ -19,47 +27,132 @@ if (authState.configured && !demoMode) {
 }
 loginButton.addEventListener('click', login);
 logoutButton.addEventListener('click', logout);
+document.querySelector('#start-free').addEventListener('click', () => {
+  if (authenticationConfigured() && !authState.authenticated && !demoMode) return login();
+  if (authenticationConfigured() && authState.authenticated && !demoMode) {
+    document.querySelector('#workspace').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  document.querySelector('#workspace').scrollIntoView({ behavior: 'smooth' });
+});
+
+function publicFormHref(slug, token = '') {
+  const href = `/public-request.html?organization=${encodeURIComponent(slug)}`;
+  return token ? `${href}&token=${encodeURIComponent(token)}` : href;
+}
+
+function intakeRequestOptions(method, body, idempotencyKey) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+  const options = { method, headers };
+  if (body !== undefined) options.body = JSON.stringify(body);
+  return options;
+}
+
+function publicIntakeUrl(slug) {
+  const path = `/api/public/intake/${encodeURIComponent(slug)}`;
+  return portalAccessToken ? `${path}?token=${encodeURIComponent(portalAccessToken)}` : path;
+}
+if (!workspaceAvailable) {
+  for (const panel of document.querySelectorAll('.workspace-panel')) panel.hidden = true;
+}
 
 const initialDemoState = {
   nextItemId: 4,
   nextRunId: 2,
   workItems: [
-    { id: 1, title: 'Protect every tenant boundary', description: 'JWT roles and tenant-scoped persistence', priority: 'CRITICAL', status: 'DONE' },
-    { id: 2, title: 'Trace the planning agent', description: 'OpenTelemetry, Prometheus, Tempo, and Grafana', priority: 'HIGH', status: 'IN_PROGRESS' },
-    { id: 3, title: 'Practice the restore runbook', description: 'Validate the RDS recovery objective', priority: 'MEDIUM', status: 'READY' },
+    { id: 1, title: 'Confirm the urgent website fix', description: 'Client reported that the booking form is unavailable', priority: 'CRITICAL', status: 'DONE' },
+    { id: 2, title: 'Prepare the June campaign brief', description: 'Turn the client request into clear deliverables', priority: 'HIGH', status: 'IN_PROGRESS' },
+    { id: 3, title: 'Schedule the support follow-up', description: 'Reply to the customer with the next available time', priority: 'MEDIUM', status: 'READY' },
   ],
   runs: [{
     id: 1,
-    goal: 'Prepare a safe production deployment',
+    goal: 'Urgent: restore the client booking form',
     classification: 'HIGH_IMPACT',
     outcome: 'PENDING_APPROVAL',
     toolBudget: 3,
     createdWorkItems: 0,
-    userId: 'portfolio-viewer',
+    userId: 'demo-admin',
     correlationId: 'demo-correlation-001',
     createdAt: new Date().toISOString(),
   }],
   members: [
-    { id: 'demo-member-1', tenantId: 'demo', userId: 'portfolio-viewer', email: 'you@example.com', role: 'ADMIN', joinedAt: new Date().toISOString() },
-    { id: 'demo-member-2', tenantId: 'demo', userId: 'demo-engineer', email: 'engineer@example.com', role: 'MEMBER', joinedAt: new Date().toISOString() },
+    { id: 'demo-member-1', tenantId: 'demo', userId: 'demo-admin', email: 'owner@example.com', role: 'ADMIN', joinedAt: new Date().toISOString() },
+    { id: 'demo-member-2', tenantId: 'demo', userId: 'demo-teammate', email: 'teammate@example.com', role: 'MEMBER', joinedAt: new Date().toISOString() },
   ],
   invitations: [
-    { id: 'demo-invite-1', tenantId: 'demo', email: 'teammate@example.com', role: 'VIEWER', invitedBy: 'portfolio-viewer', expiresAt: new Date(Date.now() + 6 * 86400000).toISOString(), acceptedAt: null, createdAt: new Date().toISOString(), token: 'demo-seed-invitation-token-000000000000' },
+    { id: 'demo-invite-1', tenantId: 'demo', email: 'teammate@example.com', role: 'VIEWER', invitedBy: 'demo-admin', expiresAt: new Date(Date.now() + 6 * 86400000).toISOString(), acceptedAt: null, createdAt: new Date().toISOString(), token: 'demo-seed-invitation-token-000000000000' },
   ],
+  requests: [{
+    id: 'demo-request-1', requesterName: 'Morgan Client', requesterEmail: 'morgan@example.com',
+    companyName: 'Morgan Creative', requestedCategory: 'SUPPORT', requestedUrgency: 'HIGH',
+    title: 'Booking form stops at payment', details: 'Customers cannot finish a booking after entering payment details.',
+    category: 'SUPPORT', suggestedPriority: 'HIGH', status: 'NEW', referenceNumber: 'RF-DEMO0001', workItemId: 1,
+    internalSummary: 'Booking form stops at payment — Customers cannot finish a booking after entering payment details.',
+    recommendedNextAction: 'Confirm the impact, reproduce the issue, and send the requester a status update.',
+    createdAt: new Date().toISOString(),
+  }],
 };
 
 function readDemoState() {
-  const saved = localStorage.getItem(demoStateKey);
-  return saved ? JSON.parse(saved) : structuredClone(initialDemoState);
+  const saved = localStorage.getItem(demoStateKey) ?? localStorage.getItem(legacyDemoStateKey);
+  if (!saved) return structuredClone(initialDemoState);
+  const parsed = JSON.parse(saved);
+  return { ...structuredClone(initialDemoState), ...parsed, requests: parsed.requests ?? [] };
 }
 
 function saveDemoState(state) {
   localStorage.setItem(demoStateKey, JSON.stringify(state));
+  localStorage.removeItem(legacyDemoStateKey);
+}
+
+function demoClassification(title, details, requestedCategory, requestedUrgency) {
+  const text = `${title} ${details}`.toLowerCase();
+  const category = requestedCategory || (/invoice|billing|payment|refund|charge/.test(text) ? 'BILLING'
+    : /bug|broken|error|outage|down|not working|cannot/.test(text) ? 'SUPPORT'
+      : /quote|pricing|proposal|estimate|sales/.test(text) ? 'SALES'
+        : /change|update|add|build|design|campaign/.test(text) ? 'CHANGE_REQUEST' : 'GENERAL');
+  const urgencyPriorities = { LOW: 'LOW', NORMAL: 'MEDIUM', HIGH: 'HIGH', URGENT: 'CRITICAL' };
+  const suggestedPriority = urgencyPriorities[requestedUrgency] || (/urgent|emergency|outage|down|critical/.test(text) ? 'CRITICAL'
+    : /asap|today|blocked|deadline/.test(text) ? 'HIGH'
+      : /no rush|when available|question/.test(text) ? 'LOW' : 'MEDIUM');
+  const actions = {
+    SUPPORT: 'Confirm the impact, reproduce the issue, and send the requester a status update.',
+    BILLING: 'Review the account and transaction history before replying with the resolution path.',
+    SALES: 'Confirm the requested outcome, budget, and timing, then assign a follow-up owner.',
+    CHANGE_REQUEST: 'Clarify scope and acceptance criteria before estimating and scheduling the work.',
+    GENERAL: 'Confirm the desired outcome and assign the request to the right team member.',
+  };
+  return { category, suggestedPriority, internalSummary: `${title} — ${details.slice(0, 240)}`,
+    recommendedNextAction: actions[category] };
 }
 
 async function demoApi(path, options = {}) {
   const method = options.method ?? 'GET';
   const state = readDemoState();
+  const publicIntakeMatch = path.match(/^\/api\/public\/intake\/([a-z0-9-]+)$/);
+  if (publicIntakeMatch && method === 'GET') {
+    return { organizationName: 'Brightside Services', organizationSlug: publicIntakeMatch[1] };
+  }
+  if (publicIntakeMatch && method === 'POST') {
+    const request = JSON.parse(options.body);
+    const classification = demoClassification(request.title, request.details, request.category, request.urgency);
+    const workItemId = state.nextItemId++;
+    state.workItems.push({ id: workItemId, title: request.title,
+      description: classification.internalSummary, priority: classification.suggestedPriority, status: 'BACKLOG' });
+    const id = crypto.randomUUID();
+    const submission = { id, ...request, requestedCategory: request.category, requestedUrgency: request.urgency,
+      ...classification, status: 'NEW', referenceNumber: `RF-${id.slice(0, 8).toUpperCase()}`,
+      workItemId, createdAt: new Date().toISOString() };
+    state.requests.unshift(submission);
+    saveDemoState(state);
+    return { requestId: submission.id, referenceNumber: submission.referenceNumber, status: submission.status,
+      category: classification.category,
+      suggestedPriority: classification.suggestedPriority,
+      recommendedNextAction: classification.recommendedNextAction,
+      receivedAt: submission.createdAt, replayed: false };
+  }
+  if (path === '/api/requests' && method === 'GET') return state.requests;
   if (path === '/api/work-items' && method === 'GET') {
     return { _embedded: { workItemList: state.workItems } };
   }
@@ -85,13 +178,19 @@ async function demoApi(path, options = {}) {
   }
   if (path === '/api/agent/runs' && method === 'GET') return state.runs;
   if (path === '/api/saas/organization' && method === 'GET') return {
-    id: 'demo', name: 'Portfolio Reviewers', slug: 'portfolio-reviewers', plan: 'PRO', status: 'ACTIVE',
-    currentUserRole: 'ADMIN', billingConfigured: false, subscriptionStatus: 'DEMO',
+    id: 'demo', name: 'Brightside Services', slug: 'brightside-services', plan: 'PRO', status: 'ACTIVE',
+    currentUserRole: 'ADMIN', billingConfigured: false, subscriptionStatus: 'DEMO', onboardingCompleted: true,
+    publicFormPath: '/public-request.html?organization=brightside-services',
     usage: { plan: 'PRO', workItemsUsed: state.workItems.length, workItemsLimit: 1000,
       agentRunsUsed: state.runs.length, agentRunsLimit: 500 },
   };
+  if (path === '/api/saas/portal' && method === 'GET') return {
+    organizationSlug: 'brightside-services', organizationName: 'Brightside Services', portalTokenRequired: false,
+    requestRetentionDays: 365, publicFormPath: '/public-request.html?organization=brightside-services',
+    shareableFormUrl: `${location.origin}/public-request.html?organization=brightside-services`,
+  };
   if (path === '/api/billing/checkout' && method === 'POST') {
-    throw new Error('Billing checkout is disabled in the browser-local portfolio demo.');
+    throw new Error('Billing checkout is disabled in the browser-local pilot demo.');
   }
   if (path === '/api/saas/members' && method === 'GET') return state.members;
   if (path === '/api/saas/invitations' && method === 'GET') return state.invitations;
@@ -99,7 +198,7 @@ async function demoApi(path, options = {}) {
     const request = JSON.parse(options.body);
     const invitation = {
       id: crypto.randomUUID(), tenantId: 'demo', email: request.email, role: request.role,
-      invitedBy: 'portfolio-viewer', expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+      invitedBy: 'demo-admin', expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
       acceptedAt: null, createdAt: new Date().toISOString(), token: `demo-${crypto.randomUUID().replaceAll('-', '')}`,
     };
     state.invitations.unshift(invitation);
@@ -117,7 +216,7 @@ async function demoApi(path, options = {}) {
         email: invitation.email, role: invitation.role, joinedAt: new Date().toISOString() });
     }
     saveDemoState(state);
-    return { id: 'demo', name: 'Portfolio Reviewers', slug: 'portfolio-reviewers', plan: 'PRO', status: 'ACTIVE',
+    return { id: 'demo', name: 'Brightside Services', slug: 'brightside-services', plan: 'PRO', status: 'ACTIVE',
       currentUserRole: 'ADMIN', billingConfigured: false, subscriptionStatus: 'DEMO',
       usage: { plan: 'PRO', workItemsUsed: state.workItems.length, workItemsLimit: 1000,
         agentRunsUsed: state.runs.length, agentRunsLimit: 500 } };
@@ -128,14 +227,14 @@ async function demoApi(path, options = {}) {
     const createdWorkItemIds = [];
     const outcome = highImpact ? 'PENDING_APPROVAL' : request.createWorkItems ? 'EXECUTED' : 'DRY_RUN';
     if (outcome === 'EXECUTED') {
-      const item = { id: state.nextItemId++, title: request.goal, description: 'Created safely by the portfolio demo agent', priority: 'MEDIUM', status: 'BACKLOG' };
+      const item = { id: state.nextItemId++, title: request.goal, description: 'Created by the rule-based request assistant', priority: 'MEDIUM', status: 'BACKLOG' };
       state.workItems.push(item);
       createdWorkItemIds.push(item.id);
     }
     const run = {
       id: state.nextRunId++, goal: request.goal, classification: highImpact ? 'HIGH_IMPACT' : 'ROUTINE',
       outcome, toolBudget: request.toolBudget, createdWorkItems: createdWorkItemIds.length,
-      userId: 'portfolio-viewer', correlationId: crypto.randomUUID(), createdAt: new Date().toISOString(),
+      userId: 'demo-admin', correlationId: crypto.randomUUID(), createdAt: new Date().toISOString(),
     };
     state.runs.unshift(run);
     saveDemoState(state);
@@ -151,7 +250,7 @@ async function demoApi(path, options = {}) {
     saveDemoState(state);
     return { ...run, createdWorkItemIds: [item.id] };
   }
-  throw new Error('This action is unavailable in the portfolio demo.');
+  throw new Error('This action is unavailable in the browser-local pilot demo.');
 }
 
 if (demoMode) document.querySelector('#demo-notice').hidden = false;
@@ -172,6 +271,77 @@ async function api(path, options = {}) {
 }
 
 const planRank = { FREE: 0, PRO: 1, BUSINESS: 2 };
+const classificationLabels = {
+  QUALITY_ENGINEERING: 'Quality or issue',
+  DELIVERY_AUTOMATION: 'Delivery or release',
+  SOFTWARE_DEVELOPMENT: 'Technical request',
+  INTELLIGENT_AUTOMATION: 'General request',
+  HIGH_IMPACT: 'High-impact request',
+  ROUTINE: 'Routine request',
+};
+
+function classificationLabel(value) {
+  return classificationLabels[value] ?? value.replaceAll('_', ' ').toLowerCase();
+}
+
+function friendlyCategory(value) {
+  return value.replaceAll('_', ' ').toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+}
+
+async function loadIntakePortal() {
+  try {
+    const portal = await api(publicIntakeUrl(activeIntakeSlug));
+    document.querySelector('#intake-organization').textContent = portal.organizationName;
+    if (portal.portalTokenRequired && !portalAccessToken) {
+      document.querySelector('#intake-description').textContent =
+        'This request portal requires a private access link from the team.';
+      document.querySelector('#intake-form').hidden = true;
+    }
+  } catch (error) {
+    document.querySelector('#intake-description').textContent = error.message;
+    document.querySelector('#intake-form').hidden = true;
+  }
+}
+
+document.querySelector('#intake-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const submit = formElement.querySelector('button[type="submit"]');
+  const result = document.querySelector('#intake-result');
+  const error = document.querySelector('#intake-error');
+  submit.disabled = true;
+  submit.setAttribute('aria-busy', 'true');
+  submit.textContent = 'Sending…';
+  error.textContent = '';
+  result.hidden = true;
+  try {
+    const receipt = await api(publicIntakeUrl(activeIntakeSlug), intakeRequestOptions('POST', {
+        requesterName: form.get('requesterName'), requesterEmail: form.get('requesterEmail'),
+        companyName: form.get('companyName'), title: form.get('title'), details: form.get('details'),
+        category: form.get('category') || null, urgency: form.get('urgency') || null,
+        website: form.get('website') || null,
+      }, crypto.randomUUID()));
+    result.replaceChildren();
+    const heading = document.createElement('strong');
+    heading.textContent = `Request received · ${friendlyCategory(receipt.category)} · ${receipt.suggestedPriority} priority`;
+    const summary = document.createElement('span');
+    summary.textContent = `${receipt.recommendedNextAction} Reference: ${receipt.referenceNumber}`;
+    const reference = document.createElement('p');
+    reference.className = 'intake-reference';
+    reference.textContent = `Reference ${receipt.referenceNumber} · Status NEW`;
+    result.append(heading, summary, reference);
+    result.hidden = false;
+    formElement.reset();
+    if (workspaceAvailable) await Promise.all([loadRequests(), loadItems(), loadOrganization()]);
+  } catch (requestFailure) {
+    error.textContent = requestFailure.message;
+  } finally {
+    submit.disabled = false;
+    submit.removeAttribute('aria-busy');
+    submit.textContent = 'Send request';
+  }
+});
 
 function renderMeter(prefix, used, limit) {
   const ratio = limit > 0 ? Math.min(used / limit, 1) : 0;
@@ -203,6 +373,13 @@ function renderUsage(organization) {
   if (onTopPlan) note.textContent = 'You are on the top plan.';
 
   document.querySelector('#team-panel').hidden = organization.currentUserRole !== 'ADMIN';
+  document.querySelector('#portal-panel').hidden = organization.currentUserRole !== 'ADMIN';
+  if (organization.currentUserRole === 'ADMIN') {
+    document.querySelector('#share-form-link').href = organization.publicFormPath || publicFormHref(organization.slug);
+  }
+  if (!demoMode && authenticationConfigured() && authState.authenticated && organization.onboardingCompleted === false) {
+    showOnboarding(organization.name, organization.slug);
+  }
 }
 
 async function loadOrganization() {
@@ -213,8 +390,14 @@ async function loadOrganization() {
     document.querySelector('#plan-badge').textContent = organization.plan;
     document.querySelector('#usage-summary').textContent =
       `${organization.usage.workItemsUsed}/${organization.usage.workItemsLimit} work items · ` +
-      `${organization.usage.agentRunsUsed}/${organization.usage.agentRunsLimit} agent runs this month`;
+      `${organization.usage.agentRunsUsed}/${organization.usage.agentRunsLimit} assisted plans this month`;
     renderUsage(organization);
+    if (organization.slug && !queryParameters.get('organization')) {
+      activeIntakeSlug = organization.slug;
+      document.querySelector('#share-form-link').href =
+        organization.publicFormPath || publicFormHref(organization.slug, portalAccessToken);
+      await loadIntakePortal();
+    }
   } catch (error) {
     document.querySelector('#usage-summary').textContent = error.message;
     document.querySelector('#usage-meters').hidden = true;
@@ -259,6 +442,108 @@ function renderInvitations(invitations) {
     list.append(row);
   }
 }
+
+async function loadPortal() {
+  if (document.querySelector('#portal-panel').hidden) return;
+  const portalError = document.querySelector('#portal-error');
+  portalError.textContent = '';
+  try {
+    const portal = await api('/api/saas/portal');
+    document.querySelector('#portal-share-url').textContent = portal.shareableFormUrl;
+    document.querySelector('#portal-token-note').textContent = portal.portalTokenRequired
+      ? 'This portal currently requires a private access token in the link.'
+      : 'Anyone with the public link can submit a request. Generate an access token for a private link.';
+    document.querySelector('#portal-settings-form').elements.requestRetentionDays.value = portal.requestRetentionDays;
+    document.querySelector('#portal-settings-form').clearPortalToken.checked = false;
+  } catch (error) {
+    portalError.textContent = error.message;
+  }
+}
+
+function showOnboarding(name = '', slug = '') {
+  const dialog = document.querySelector('#onboarding-dialog');
+  const form = document.querySelector('#onboarding-form');
+  form.name.value = name;
+  form.slug.value = slug;
+  dialog.hidden = false;
+}
+
+document.querySelector('#onboarding-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const error = document.querySelector('#onboarding-error');
+  const submit = formElement.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  error.textContent = '';
+  try {
+    await api('/api/saas/onboarding', { method: 'POST', body: JSON.stringify({
+      name: form.get('name'), slug: form.get('slug'),
+    }) });
+    document.querySelector('#onboarding-dialog').hidden = true;
+    await Promise.all([loadOrganization(), loadPortal(), loadIntakePortal()]);
+  } catch (requestFailure) {
+    error.textContent = requestFailure.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+document.querySelector('#portal-settings-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const submit = formElement.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  document.querySelector('#portal-error').textContent = '';
+  try {
+    await api('/api/saas/portal', { method: 'PATCH', body: JSON.stringify({
+      requestRetentionDays: Number(form.get('requestRetentionDays')),
+      clearPortalToken: form.has('clearPortalToken'),
+    }) });
+    formElement.clearPortalToken.checked = false;
+    await loadPortal();
+  } catch (error) {
+    document.querySelector('#portal-error').textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+document.querySelector('#rotate-portal-token').addEventListener('click', async () => {
+  const button = document.querySelector('#rotate-portal-token');
+  button.disabled = true;
+  document.querySelector('#portal-error').textContent = '';
+  try {
+    const rotated = await api('/api/saas/portal/rotate-token', { method: 'POST' });
+    const result = document.querySelector('#portal-token-result');
+    document.querySelector('#portal-token-url').textContent = rotated.shareableFormUrl;
+    result.hidden = false;
+    await loadPortal();
+  } catch (error) {
+    document.querySelector('#portal-error').textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.querySelector('#refresh-portal').addEventListener('click', loadPortal);
+
+document.querySelector('#copy-portal-link').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(document.querySelector('#portal-share-url').textContent);
+    document.querySelector('#copy-portal-link').textContent = 'Copied';
+    setTimeout(() => { document.querySelector('#copy-portal-link').textContent = 'Copy link'; }, 1500);
+  } catch { /* clipboard unavailable */ }
+});
+
+document.querySelector('#copy-portal-token').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(document.querySelector('#portal-token-url').textContent);
+    document.querySelector('#copy-portal-token').textContent = 'Copied';
+    setTimeout(() => { document.querySelector('#copy-portal-token').textContent = 'Copy'; }, 1500);
+  } catch { /* clipboard unavailable */ }
+});
 
 async function loadTeam() {
   if (document.querySelector('#team-panel').hidden) return;
@@ -324,7 +609,9 @@ document.querySelector('#accept-form').addEventListener('submit', async (event) 
     const overview = await api('/api/saas/invitations/accept', { method: 'POST', body: JSON.stringify({
       token: form.get('token').trim(),
     }) });
-    result.textContent = `Joined ${overview.name} as ${overview.currentUserRole}.`;
+    result.textContent = overview.identityRefreshRequired
+      ? `Joined ${overview.name} as ${overview.currentUserRole}. Sign in again to refresh your workspace.`
+      : `Joined ${overview.name} as ${overview.currentUserRole}.`;
     formElement.reset();
     await Promise.all([loadOrganization(), loadTeam()]);
   } catch (error) { result.textContent = error.message; }
@@ -385,10 +672,64 @@ async function loadRuns() {
   }
 }
 
+async function loadRequests() {
+  const refresh = document.querySelector('#refresh-requests');
+  const status = document.querySelector('#request-status');
+  requestError.textContent = '';
+  status.textContent = '';
+  const label = refresh.textContent;
+  refresh.disabled = true;
+  refresh.textContent = 'Refreshing…';
+  try {
+    const requests = await api('/api/requests');
+    renderRequests(requests);
+    status.textContent = requests.length
+      ? `${requests.length} request${requests.length === 1 ? '' : 's'} loaded.`
+      : 'No requests for your workspace yet. Share the link under Request portal — submissions must use your organization slug.';
+  } catch (error) {
+    requestError.textContent = error.message;
+    requestBoard.replaceChildren();
+    requestBoard.textContent = 'Could not load requests. Sign in again if your session expired.';
+  } finally {
+    refresh.disabled = false;
+    refresh.textContent = label;
+  }
+}
+
+function renderRequests(requests) {
+  requestBoard.replaceChildren();
+  if (!requests.length) {
+    const empty = document.createElement('p');
+    empty.className = 'description';
+    empty.textContent = 'No incoming requests yet. Use Request portal → Copy link, then submit a test request from that URL.';
+    requestBoard.append(empty);
+    return;
+  }
+  for (const request of requests) {
+    const view = document.querySelector('#request-template').content.cloneNode(true);
+    view.querySelector('.request-category').textContent = friendlyCategory(request.category);
+    view.querySelector('time').textContent = new Date(request.createdAt).toLocaleString();
+    view.querySelector('h3').textContent = request.title;
+    view.querySelector('.request-from').textContent = `${request.requesterName} · ${request.companyName} · ${request.requesterEmail}`;
+    const preferences = [request.referenceNumber,
+      request.requestedCategory ? `requested ${friendlyCategory(request.requestedCategory)}` : null,
+      request.requestedUrgency ? `${friendlyCategory(request.requestedUrgency)} urgency` : null]
+      .filter(Boolean).join(' · ');
+    view.querySelector('.request-preferences').textContent = preferences;
+    view.querySelector('.request-summary').textContent = request.internalSummary;
+    view.querySelector('.request-action').textContent = `Next: ${request.recommendedNextAction}`;
+    const priority = view.querySelector('.priority');
+    priority.textContent = request.suggestedPriority;
+    priority.dataset.priority = request.suggestedPriority;
+    view.querySelector('.request-status').textContent = request.status;
+    requestBoard.append(view);
+  }
+}
+
 function renderRuns(runs) {
   runBoard.replaceChildren();
   if (!runs.length) {
-    runBoard.textContent = 'No agent decisions yet.';
+    runBoard.textContent = 'No assisted plans yet.';
     return;
   }
   for (const run of runs) {
@@ -400,8 +741,8 @@ function renderRuns(runs) {
     outcome.dataset.outcome = run.outcome;
     view.querySelector('time').textContent = new Date(run.createdAt).toLocaleString();
     view.querySelector('h3').textContent = run.goal;
-    view.querySelector('.run-meta').textContent = `${run.classification} · budget ${run.toolBudget} · ${run.createdWorkItems} tools used`;
-    view.querySelector('.run-identity').textContent = `User ${run.userId} · correlation ${run.correlationId}`;
+    view.querySelector('.run-meta').textContent = `${classificationLabel(run.classification)} · up to ${run.toolBudget} steps · ${run.createdWorkItems} work items created`;
+    view.querySelector('.run-identity').textContent = `Requested by ${run.userId} · reference ${run.correlationId}`;
     const approve = view.querySelector('.approve');
     if (run.outcome === 'PENDING_APPROVAL') {
       approve.hidden = false;
@@ -429,7 +770,7 @@ function render(items) {
   document.querySelector('#done-count').textContent = items.filter((item) => item.status === 'DONE').length;
   board.replaceChildren();
   if (!items.length) {
-    board.textContent = 'No work yet. Give the agent a mission.';
+    board.textContent = 'No work yet. Add a request or create a work plan.';
     return;
   }
   for (const item of items) {
@@ -477,7 +818,7 @@ document.querySelector('#work-form').addEventListener('submit', async (event) =>
   submit.disabled = true;
   try {
     await api('/api/work-items', { method: 'POST', body: JSON.stringify({
-      title: form.get('title'), description: 'Created from the JavaScript dashboard',
+      title: form.get('title'), description: 'Created from the RequestFlow AI dashboard',
       priority: form.get('priority'), status: 'BACKLOG',
     }) });
     formElement.reset();
@@ -491,7 +832,7 @@ document.querySelector('#agent-form').addEventListener('submit', async (event) =
   const result = document.querySelector('#agent-result');
   const submit = event.currentTarget.querySelector('button[type="submit"]');
   submit.disabled = true;
-  result.textContent = 'Agent is planning…';
+  result.textContent = 'Preparing a work plan…';
   try {
     const form = new FormData(event.currentTarget);
     const response = await api('/api/agent/plan', {
@@ -505,11 +846,11 @@ document.querySelector('#agent-form').addEventListener('submit', async (event) =
     const messages = {
       EXECUTED: `Executed safely: created ${response.createdWorkItemIds.length} work items.`,
       PENDING_APPROVAL: 'Plan is ready and waiting for human approval.',
-      DRY_RUN: 'Dry run complete: no tools were called.',
-      BUDGET_EXCEEDED: 'Stopped safely: the tool-call budget is too small for this plan.',
-      BLOCKED: 'Blocked by safety policy: no tools were called.',
+      DRY_RUN: 'Preview complete: no work items were created.',
+      BUDGET_EXCEEDED: 'Stopped safely: increase the maximum work steps for this plan.',
+      BLOCKED: 'Blocked by the safety policy: no work items were created.',
     };
-    result.textContent = `${response.classification}: ${messages[response.outcome]}`;
+    result.textContent = `${classificationLabel(response.classification)}: ${messages[response.outcome]}`;
     await Promise.all([loadItems(), loadRuns(), loadOrganization()]);
   } catch (error) { result.textContent = error.message; }
   finally { submit.disabled = false; }
@@ -517,6 +858,22 @@ document.querySelector('#agent-form').addEventListener('submit', async (event) =
 
 document.querySelector('#refresh').addEventListener('click', loadItems);
 document.querySelector('#refresh-runs').addEventListener('click', loadRuns);
+document.querySelector('#refresh-requests').addEventListener('click', loadRequests);
 showBillingReturn();
-await Promise.all([loadItems(), loadRuns(), loadOrganization()]);
-await loadTeam();
+await loadIntakePortal();
+if (workspaceAvailable) {
+  await Promise.all([loadItems(), loadRuns(), loadRequests(), loadOrganization()]);
+  await Promise.all([loadTeam(), loadPortal()]);
+}
+
+const siteHeader = document.querySelector('.site-header');
+const workspaceJump = document.querySelector('#workspace-jump');
+const workspaceSection = document.querySelector('#workspace');
+if (siteHeader && workspaceJump && workspaceSection) {
+  const observer = new IntersectionObserver(([entry]) => {
+    const showJump = !entry.isIntersecting && window.scrollY > 320;
+    workspaceJump.hidden = !showJump;
+    siteHeader.classList.toggle('scrolled', window.scrollY > 24);
+  }, { threshold: 0.05 });
+  observer.observe(workspaceSection);
+}

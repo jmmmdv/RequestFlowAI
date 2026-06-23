@@ -1,73 +1,141 @@
-# Automation Mission Control
+# RequestFlow AI
 
-A production-shaped, multi-tenant SaaS portfolio project connecting REST engineering, browser
-automation, security, DevOps, cloud, RPA, and agentic AI. People manage a delivery board while a
-bounded planning agent turns goals into attributable, auditable work.
+RequestFlow AI is a production-shaped SaaS MVP foundation for small businesses, agencies,
+consultants, and small IT/support teams. It brings incoming requests into one workspace, turns
+them into trackable work, helps teams identify urgent items, and preserves an audit trail as the
+work moves forward.
 
 ![Java 21](https://img.shields.io/badge/Java-21-ED8B00)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F)
 ![Playwright](https://img.shields.io/badge/Playwright-E2E-2EAD33)
-[![CI](https://github.com/jmmmdv/FromZeroToHero/actions/workflows/ci.yml/badge.svg)](https://github.com/jmmmdv/FromZeroToHero/actions/workflows/ci.yml)
+[![CI](https://github.com/jmmmdv/RequestFlowAI/actions/workflows/ci.yml/badge.svg)](https://github.com/jmmmdv/RequestFlowAI/actions/workflows/ci.yml)
 ![Coverage gate](https://img.shields.io/badge/coverage_gate-80%25-brightgreen)
 
-![Automation Mission Control dashboard](docs/assets/mission-control-dashboard.jpg)
+![RequestFlow AI landing page](docs/assets/requestflow-ai-landing.jpg)
 
-> **Reviewing this for a role?** Start with the [case study](docs/portfolio/CASE-STUDY.md) for the
-> problem, key engineering decisions, and evidence, then the [demo script](docs/portfolio/DEMO-SCRIPT.md)
-> for a five-minute walkthrough.
+> **Status:** working SaaS foundation and pilot-ready demo, not a launched commercial service.
+> Public request intake, rule-based triage, work management, tenant isolation, team, quota, audit,
+> and Stripe integration layers are implemented and tested. Production onboarding, abuse controls,
+> identity/payment drills, and real pilot feedback remain launch work.
 
-## Product direction: MissionOps AI
+> **Repository:** [github.com/jmmmdv/RequestFlowAI](https://github.com/jmmmdv/RequestFlowAI)
+>
+> **Reviewing this for a role?** Start with the [case study](docs/portfolio/CASE-STUDY.md), then use
+> the [five-minute demo](docs/portfolio/DEMO-SCRIPT.md) to inspect the product and its engineering
+> evidence.
 
-This repository is evolving from Automation Mission Control into **MissionOps AI**, a request
-automation product that helps small service businesses turn messy customer or employee requests
-into organized, trackable, automation-assisted work with human approval and audit history. The
-[commercial MVP contract](docs/product/MISSIONOPS-MVP.md) defines the first paid pilot and keeps raw
-service requests separate from internal execution work.
+## The product problem
 
-## Why this project exists
+Small service teams receive requests through email, messages, calls, and forms. Important work is
+easy to lose, priority is inconsistent, and customers cannot see what happens next. RequestFlow AI
+is being built to provide a simple path from request to accountable work:
 
-Most training repositories are disconnected examples. This one demonstrates how production
-concerns interact inside a coherent product:
+1. Collect a client or internal request.
+2. Suggest a category, priority, summary, and next action.
+3. Turn the request into trackable work items.
+4. Assign a status and keep the team aligned.
+5. Preserve important decisions and approvals in an audit trail.
+6. Upgrade as request volume and team size grow.
+
+The current application proves steps 1–5 with a rule-based assistant and provides the SaaS control
+plane for step 6. Production onboarding, rate limiting, external billing/identity drills, and pilot
+validation remain before a commercial launch claim would be honest.
+
+## What works today
+
+| Capability | Current evidence | Product status |
+|---|---|---|
+| Trackable work-item board and status changes | Spring REST API, static dashboard, HATEOAS, Playwright | Implemented |
+| Rule-based request-to-work planning | Bounded planner, priority keywords, tool budgets, approval flow | Implemented foundation; not an LLM |
+| Organization and team support | Organizations, memberships, roles, expiring invitations | Implemented and tested |
+| Tenant-safe data boundaries | JWT-derived tenant context and repository-scoped queries | Implemented and tested |
+| Audit evidence | Attributed agent runs with tenant, user, correlation ID, outcome, and time | Implemented and tested |
+| Free/Pro/Business limits | Enforced work-item and monthly planning quotas | Implemented and tested |
+| Stripe billing foundation | Checkout creation and signature-verified webhook synchronization | Test-ready; production configuration required |
+| Demo mode | Browser-local sample organization and disposable data | Implemented and clearly labeled |
+| Public request form | Dedicated shareable page, slug-resolved portal, requester metadata, reference, idempotent submission | Implemented and tested |
+| Request-specific classification | Rule-based category, summary, priority suggestion, and next action | Implemented foundation; not an LLM |
+| Customer-facing landing and pricing | Responsive value proposition, plan limits, and calls to action | Implemented |
+| Start Free onboarding | Self-serve workspace setup after Cognito sign-in; onboarding wizard and API tested | Live production drill passed — see [DRILL-LOG.md](docs/saas/DRILL-LOG.md) |
+
+## Why the engineering foundation matters
+
+RequestFlow AI is also a professional Java/Spring Boot portfolio project. The product layer sits on
+evidence that is deliberately difficult to fake:
 
 - signed JWT identity becomes a trusted tenant boundary at the repository layer;
 - agent actions create durable audit evidence tied to user, tenant, and correlation ID;
 - the same Flyway migrations run against fast local H2 and real PostgreSQL in CI;
 - REST, database-consistency, security, contract, and browser tests form one delivery gate;
-- organizations, memberships, invitations, plan quotas, and Stripe subscription state form a real SaaS product layer;
-- Jenkins, GitHub Actions, Docker, CloudFormation, and operational docs show the path to release.
+- organizations, memberships, invitations, plan quotas, and Stripe subscription state form the
+  SaaS control plane;
+- Jenkins, GitHub Actions, Docker, CloudFormation, and operational docs show a path to release.
 
-The rule-based agent is intentionally deterministic. It makes orchestration, safety boundaries,
-and evaluation visible before an external LLM is introduced.
+The assistant is intentionally deterministic and rule-based today. This keeps safety, approval,
+idempotency, and evaluation visible before an external LLM is introduced.
 
-## Start here
+## Run it locally
 
-Requirements: Java 21+, Node.js 20+ (24 recommended), and Git. Docker is optional locally but
-enables the real PostgreSQL integration test.
+Requirements: Java 21+, Node.js 20+ (24 recommended), and Git. Docker is optional locally but is
+needed for the real PostgreSQL integration test.
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Open [http://localhost:8080](http://localhost:8080). In another terminal:
+Open:
 
-- Dashboard: [http://localhost:8080](http://localhost:8080)
+- Landing page: [http://localhost:8080](http://localhost:8080)
+- Interactive dashboard demo: [http://localhost:8080/#workspace](http://localhost:8080/#workspace)
+- Shareable public request form: [http://localhost:8080/public-request.html?organization=local](http://localhost:8080/public-request.html?organization=local)
+- Embedded landing-page form: [http://localhost:8080/#request-intake](http://localhost:8080/#request-intake)
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - OpenAPI JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
 
-The default Vercel deployment is an explicitly labeled, browser-local portfolio preview with
-disposable data. When its three public `MISSION_*` variables are configured, the same build becomes
-the production UI: Cognito Authorization Code + PKCE in the browser and bearer-token calls to the
-App Runner API. See [the SaaS launch guide](docs/saas/SAAS-LAUNCH.md).
+The landing page and dashboard share one responsive experience: marketing sections explain the
+problem, target teams, five-step request flow, benefits, and plans; **View demo** jumps to the
+working dashboard without removing any existing functionality. In local development, sample data
+is disposable and the public request form creates both an inbox entry and a trackable work item.
+
+### Share a public request form
+
+A business shares this URL, replacing `local` with its organization slug:
+
+```text
+https://your-requestflow-host/public-request.html?organization=your-company-slug
+```
+
+The slug identifies a public portal; it is not treated as a secret or accepted as a tenant ID.
+The API validates the slug format, resolves an active organization on the server, and writes the
+request and generated work item with that organization's stored UUID. The browser never submits a
+tenant ID. Unknown or inactive slugs return `404` without exposing private workspace data.
+
+The requester supplies their name, email, company/client name, title, and details. Category and
+urgency are optional signals used for the suggested classification and priority; they never grant
+permissions or approve automated work. A successful submission receives a `RF-XXXXXXXX` reference
+and `NEW` status. Signed-in workspace users see the original request, requester metadata, optional
+signals, suggested priority, next action, and linked work item in the request inbox.
+
+The default Vercel deployment is an explicitly labeled browser-local demo with disposable data.
+When its documented public browser configuration is present, the same frontend uses Cognito
+Authorization Code + PKCE and bearer-token calls to the App Runner API. See the
+[SaaS launch guide](docs/saas/SAAS-LAUNCH.md).
 
 ```bash
 curl http://localhost:8080/api/work-items
+curl -X POST http://localhost:8080/api/public/intake/local \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: public-request-001' \
+  -d '{"requesterName":"Alex","requesterEmail":"alex@example.com","companyName":"Alex Services","title":"Booking form is down","details":"Customers cannot complete a booking today.","category":"SUPPORT","urgency":"URGENT"}'
 curl -X POST http://localhost:8080/api/agent/plan \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: demo-deploy-001' \
-  -d '{"goal":"Deploy the REST API to AWS","createWorkItems":true,"toolBudget":3}'
+  -H 'Idempotency-Key: demo-request-001' \
+  -d '{"goal":"Prepare the urgent client website update","createWorkItems":true,"toolBudget":3}'
 ```
 
-Run all automated checks:
+## Verification
+
+Run the complete backend and browser checks:
 
 ```bash
 ./mvnw clean verify
@@ -83,15 +151,9 @@ docker compose --profile observability up -d
 TRACING_ENABLED=true ./mvnw spring-boot:run
 ```
 
-Open Grafana at [http://localhost:3000](http://localhost:3000), Prometheus at
-[http://localhost:9090](http://localhost:9090), then exercise the dashboard to generate metrics and
-traces. Grafana is pre-provisioned with Prometheus, Tempo, and the Mission Control dashboard.
-
-Run only the API–database comparison samples:
-
-```bash
-./mvnw -Dtest=ApiDatabaseConsistencyTest test
-```
+Open Grafana at [http://localhost:3000](http://localhost:3000) and Prometheus at
+[http://localhost:9090](http://localhost:9090), then use the dashboard to generate metrics and
+traces.
 
 Run against a production-shaped PostgreSQL database:
 
@@ -102,146 +164,133 @@ SPRING_DATASOURCE_USERNAME=mission SPRING_DATASOURCE_PASSWORD=mission \
 ./mvnw spring-boot:run
 ```
 
-Flyway owns the schema in every environment, so H2, CI, and PostgreSQL start from the same
-reviewed migration. Production credentials belong in `DATABASE_USERNAME` and
-`DATABASE_PASSWORD`, never in source control.
+The `mission_control` database name and several `MISSION_*` configuration keys are retained as
+legacy deployment identifiers so existing environments do not break during the product rename.
+They are not the customer-facing product name. New deployments should use the RequestFlow aliases
+documented in the launch guide where available.
 
 ## Engineering evidence
 
 | Claim | Evidence in the repository |
 |---|---|
 | Tenant data cannot cross organization boundaries | `TenantIsolationSecurityTest` proves list and direct-ID isolation |
+| Public intake cannot choose an arbitrary tenant ID | Active organization slug resolves server-side; request bodies contain no tenant authority |
+| Retried public submissions do not duplicate work | Tenant-scoped idempotency constraint and integration test |
 | API responses agree with persisted rows | `ApiDatabaseConsistencyTest` compares HTTP JSON with raw SQL |
-| Migrations work on PostgreSQL | `PostgreSqlApiIntegrationTest` runs Flyway and API persistence in Testcontainers |
+| Migrations work on PostgreSQL | `PostgreSqlApiIntegrationTest` runs Flyway and persistence in Testcontainers |
 | API behavior is discoverable | `/swagger-ui.html`, `/v3/api-docs`, and `OpenApiDocumentationTest` |
 | Agent activity is attributable | `agent_run` stores tenant, user, correlation ID, outcome, and timestamp |
-| High-impact actions need a person | `AgentPolicyEngine` pauses execution and the approval API is idempotent |
+| High-impact actions need a person | `AgentPolicyEngine` pauses execution and approval is idempotent |
 | Agent behavior cannot silently regress | `AgentEvaluationTest` gates 27 golden and adversarial cases in CI |
 | Main cannot silently lose coverage | JaCoCo fails `verify` below 80% line coverage |
-| User journeys work in a browser | Playwright covers dashboard, agent, status, and REST CRUD workflows |
-| Production data stays private and recoverable | CloudFormation provisions private encrypted RDS, Secrets Manager, backups, and snapshot retention |
-| Operators can detect and diagnose failure | OTLP tracing, provisioned Grafana, CloudWatch dashboard, SNS alarms, SLOs, and runbooks |
-| The product has a SaaS control plane | Organizations, memberships, invitations, plan quotas, Stripe Checkout, and signed webhooks have integration tests |
-| Browser credentials are never embedded | Cognito uses a public client, Authorization Code + PKCE, state validation, and deploy-time public configuration |
-
-## Five-minute reviewer walkthrough
-
-1. Start the app and open the dashboard screenshot or live UI.
-2. Use Swagger UI to create and update a work item, then inspect its HAL links.
-3. Run an urgent production goal, show that zero tools run, then approve it from the audit trail.
-4. Open `TenantIsolationSecurityTest` to explain why tenant identity never comes from input data.
-5. Open the provisioned Grafana dashboard and follow one request from metrics to a Tempo trace.
-6. Run `./mvnw clean verify` and show the PostgreSQL test and JaCoCo report under
-   `target/site/jacoco/index.html`.
-7. Run `npm test` and inspect the Playwright HTML report.
-
-## What you will learn
-
-| Topic from the course | Where it lives | Practical challenge |
-|---|---|---|
-| JavaScript | `src/main/resources/static/app.js` | Fetch HAL JSON, update the DOM, handle failures |
-| Playwright | `e2e/` and `playwright.config.js` | UI, API, locators, assertions, traces, CI retries |
-| API–database testing | `ApiDatabaseConsistencyTest.java` | Compare REST JSON with raw SQL results |
-| Git | `docs/git/WORKFLOW.md` | Branch, commit, merge, revert, resolve a conflict |
-| Jira | `docs/jira/PROJECT-SETUP.md`, issue templates | Turn a requirement into epic → story → task → bug |
-| Agile | `docs/agile/PLAYBOOK.md` | Plan a sprint, define done, demo, retrospect |
-| SDLC | `docs/sdlc/SDLC.md` | Trace an idea through design, build, test, release, operate |
-| Jenkins | `Jenkinsfile` | Build, unit test, E2E test, package, archive evidence |
-| AWS | `infrastructure/aws/` | Containerize, push to ECR, deploy App Runner via CloudFormation |
-| UiPath | `docs/uipath/INTEGRATION-LAB.md` | Let an RPA workflow call the REST API without scraping the UI |
-| AI agents | `agent/AgentOrchestrator.java` | Classify, enforce policy and budgets, invoke typed tools, audit every outcome |
-| Agentic AI | `docs/architecture/AGENTIC-AI.md` | Add guardrails, idempotency, approval, memory, evaluation |
-| SaaS security | `docs/security/PRODUCTION-SECURITY.md` | JWT roles, trusted tenant context, isolation tests, audit trail |
-| Intelligent automation | Full system | Combine API, rules, browser automation, RPA, CI, and cloud |
-| Real-world projects | Milestones below | Deliver vertical slices with acceptance evidence |
-| Spring REST | `workitem/`, tests, HATEOAS | CRUD, validation, RFC 9457-style problems, links, persistence |
-
-The Spring implementation is based on the official
-[Building REST services with Spring](https://spring.io/guides/tutorials/rest/) tutorial, then
-extended with validation, `201 Created` locations, Problem Details, service tests, and a UI.
+| User journeys work in a browser | Playwright covers work items, approvals, quotas, invitations, and CRUD |
+| Production data has recovery controls | CloudFormation declares private encrypted RDS, backups, and snapshot retention |
+| Operators have diagnostic evidence | OTLP tracing, Grafana, CloudWatch, SLOs, and runbooks |
+| SaaS account controls exist | Organizations, memberships, invitations, quotas, Checkout, and webhooks have tests |
+| Browser secrets are not embedded | Cognito uses a public client and deploy-time public configuration |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  User["User / UiPath"] --> UI["Vercel JavaScript dashboard"]
-  User --> Cognito["Amazon Cognito + PKCE"]
+  Customer["Customer or internal requester"] --> Intake["Public request intake"]
+  Intake --> API["Spring REST API"]
+  API --> Triage["Rule-based category, priority, summary, next action"]
+  Triage --> Work["Trackable work items"]
+  Team["Team member"] --> UI["RequestFlow AI dashboard"]
+  Team --> Cognito["Amazon Cognito + PKCE"]
   Cognito --> UI
-  UI --> API["Spring REST + HATEOAS"]
-  User --> API
-  API --> Agent["Bounded agent orchestrator"]
-  Agent --> Policy["Safety + approval policy"]
-  Agent --> Tool["Work-item tool"]
-  Tool --> DB[("H2 / PostgreSQL")]
+  UI --> API
+  API --> Assistant["Rule-based planning assistant"]
+  Assistant --> Policy["Safety + approval policy"]
+  Assistant --> Work
+  Work --> DB[("H2 / PostgreSQL")]
   API --> DB
-  API --> Stripe["Stripe Checkout + webhooks"]
-  PW["Playwright"] --> UI
-  PW --> API
-  Jenkins["Jenkins"] --> PW
-  Jenkins --> AWS["ECR + App Runner"]
+  API --> Stripe["Stripe Checkout + verified webhooks"]
+  Tests["JUnit + Testcontainers + Playwright"] --> API
+  Tests --> UI
 ```
 
-The agent is rule-based on purpose: learners can see orchestration and tool use without paying
-for a model or leaking data. The extension path in `docs/architecture/AGENTIC-AI.md` shows where
-an LLM belongs while keeping deterministic tests and safety controls.
+Every node maps to implemented code or production-shaped configuration. The classification and
+planning assistants are deterministic rules, not an external LLM.
 
 ## API tour
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/api/work-items` | HAL collection with navigable links |
-| `POST` | `/api/work-items` | Validate and create; returns `201` and `Location` |
+| `GET` | `/api/public/intake/{organizationSlug}` | Resolve an active public request portal |
+| `POST` | `/api/public/intake/{organizationSlug}` | Validate, store, classify, and create work for an idempotent public request |
+| `GET` | `/api/requests` | List original requests for the authenticated tenant |
+| `GET` | `/api/requests/{requestId}` | Read one original request inside the authenticated tenant boundary |
+| `GET` | `/api/work-items` | Tenant-scoped work-item collection |
+| `POST` | `/api/work-items` | Validate and create a work item |
 | `GET` | `/api/work-items/{id}` | Read one or return a structured `404` |
 | `PUT` | `/api/work-items/{id}` | Replace mutable fields |
 | `PATCH` | `/api/work-items/{id}/status` | Change status without replacing the item |
 | `DELETE` | `/api/work-items/{id}` | Delete and return `204` |
 | `POST` | `/api/agent/plan` | Dry-run or execute an auditable three-step plan |
-| `POST` | `/api/agent/runs/{id}/approve` | Approve one pending high-impact plan; safe to retry |
-| `GET` | `/api/agent/runs` | Tenant-scoped agent audit history (production: admin only) |
-| `GET` | `/api/saas/organization` | Organization, role, subscription, and quota usage |
-| `PATCH` | `/api/saas/organization` | Rename an organization (admin only) |
-| `GET/POST` | `/api/saas/invitations` | List or issue expiring team invitations (admin only) |
+| `POST` | `/api/agent/runs/{id}/approve` | Approve one pending high-impact plan safely |
+| `GET` | `/api/agent/runs` | Tenant-scoped planning audit history |
+| `GET/PATCH` | `/api/saas/organization` | Read or rename the current organization |
+| `GET/POST` | `/api/saas/invitations` | List or issue expiring team invitations |
 | `POST` | `/api/saas/invitations/accept` | Accept an email-bound, one-time invitation |
-| `POST` | `/api/billing/checkout` | Create idempotent Stripe Checkout for PRO or BUSINESS |
+| `POST` | `/api/billing/checkout` | Create idempotent Stripe Checkout for paid plans |
 | `POST` | `/api/billing/webhook` | Verify Stripe HMAC and synchronize subscription state |
-| `GET` | `/actuator/health` | CI/cloud health probe |
+| `GET` | `/actuator/health` | CI and cloud health probe |
 
-## Learning milestones
+## SaaS MVP roadmap
 
-1. **Explorer:** run the service, use browser DevTools, change one JavaScript component.
-2. **API builder:** add assignee and due-date fields through entity, validation, API, and tests.
-3. **Quality engineer:** add Playwright edit/delete cases and diagnose a trace from a forced failure.
-4. **Delivery engineer:** run the Jenkins pipeline and deploy an immutable image to AWS.
-5. **Automation engineer:** complete the UiPath API workflow with retry and business exceptions.
-6. **Agent engineer (complete):** typed planner seam, human approval, execution budget,
-   tenant-scoped idempotency, audit UI, and a 27-case evaluation gate.
-7. **Capstone (in progress):** run PostgreSQL in production, secure every tenant, add
-   observability, and operate the service against measurable reliability targets.
+### Implemented foundation
 
-   - [x] Flyway migrations, PostgreSQL driver, and production database profile
-   - [x] OAuth2 JWT authentication with role-based authorization
-   - [x] Tenant-scoped persistence with tested cross-tenant isolation
-   - [x] Attributed agent audit records and correlation IDs
-   - [x] Private RDS, VPC connectivity, and Secrets Manager integration in AWS
-   - [x] OpenTelemetry tracing, local Grafana, CloudWatch dashboard, and actionable alarms
-   - [x] SLOs, incident runbook, backup policy, and repeatable restore-drill procedure
-   - [ ] Execute and record the restore drill in an AWS sandbox account
-   - [x] Browser authorization-code flow with PKCE for the production UI
-   - [x] Organization onboarding, memberships, roles, and expiring invitations
-   - [x] Enforced FREE/PRO/BUSINESS work-item and monthly agent-run quotas
-   - [x] Stripe Checkout plus timestamped, constant-time verified webhook synchronization
-   - [ ] Execute a real Cognito signup, Stripe test checkout, and invitation identity-transfer drill
+- [x] Work-item CRUD and status tracking
+- [x] Customer-facing landing page, pricing, and Start Free entry point
+- [x] Dedicated public request page with server-resolved organization slug and confirmation reference
+- [x] Original-request storage, requester/company metadata, optional category/urgency, and idempotency
+- [x] Rule-based category, priority, summary, and recommended next action
+- [x] Rule-based planning, priority keywords, human approval, idempotency, and audit trail
+- [x] Organizations, memberships, roles, and expiring invitations
+- [x] Tenant-scoped persistence with tested cross-tenant isolation
+- [x] Enforced FREE/PRO/BUSINESS quotas
+- [x] Stripe Checkout and timestamped, constant-time verified webhooks
+- [x] Cognito resource-server configuration and browser PKCE flow
+- [x] Flyway, PostgreSQL Testcontainers, CI, coverage gate, and Playwright journeys
+- [x] AWS and observability infrastructure as code
 
-Each milestone is done only when code, tests, documentation, and demo evidence agree.
+### Required before a production-backed pilot
+
+- [x] Add production rate limiting, bot protection, request-retention controls, and optional unguessable portal tokens
+- [x] Complete and test the production-backed Start Free onboarding journey
+- [x] Run and record Cognito signup drill — [EXTERNAL-DRILLS.md](docs/saas/EXTERNAL-DRILLS.md) and [DRILL-LOG.md](docs/saas/DRILL-LOG.md)
+- [ ] Run and record invitation transfer and Stripe test Checkout drills — [EXTERNAL-DRILLS.md](docs/saas/EXTERNAL-DRILLS.md)
+- [ ] Run and record the AWS restore drill — [RESTORE-DRILL.md](docs/operations/RESTORE-DRILL.md)
+- [x] Add pilot onboarding, support, privacy, and data-retention documentation
+- [ ] Validate the workflow with first pilot users before claiming commercial launch readiness
+
+## Portfolio evidence map
+
+| Area | Where it lives |
+|---|---|
+| Java and Spring REST | `src/main/java/.../workitem`, validation, HATEOAS, and controller tests |
+| Public intake and triage | `public-request.html`, `intake/`, migrations V5–V6, classifier tests, and public integration tests |
+| Multi-tenancy and security | `security/`, repository methods, `TenantIsolationSecurityTest` |
+| SaaS control plane | `saas/`, Flyway migrations, and `SaasProductIntegrationTest` |
+| Automation safety | `agent/`, approval policy, idempotency, audit, evaluation dataset |
+| Portfolio and investor material | `docs/portfolio/CASE-STUDY.md`, `JOB-SEARCH-KIT.md`, `INVESTOR-ONE-PAGER.md`, `PILOT-OUTREACH.md` |
+| Browser experience | `src/main/resources/static`, `e2e/`, and Playwright configuration |
+| Data confidence | Flyway, H2, PostgreSQL Testcontainers, API/database consistency tests |
+| Delivery | GitHub Actions, Jenkins, Docker, CloudFormation, App Runner concepts |
+| Operations | OpenTelemetry, Prometheus, Grafana, Tempo, CloudWatch, SLOs, and runbooks |
+
+The repository remains intentionally useful for both SaaS launch preparation and professional
+portfolio review. Product claims are only marked complete when code, tests, documentation, and
+real external drills agree.
 
 ## Repository conventions
 
 - Never commit secrets. Use environment variables and a secret manager.
-- API changes require unit/integration tests and updated docs.
+- API changes require tests and updated documentation.
 - Browser tests assert user-visible behavior, not implementation details.
-- Agent actions must be bounded, observable, and safe to repeat.
-- Tenant identity comes only from a verified JWT claim; never trust a client-supplied tenant ID.
+- Automated actions must be bounded, observable, and safe to retry.
+- Tenant identity comes only from a verified boundary; never trust a client-supplied tenant ID.
+- Demo mode and production mode must remain clearly separated.
 - Cloud resources are declared as code and reviewed before deployment.
-
-This repository is intentionally ready for your first commit, but no commit is made for you—you
-should practice the Git workflow yourself.

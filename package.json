@@ -1,8 +1,12 @@
 {
-  "name": "automation-mission-control-e2e",
+  "name": "requestflow-ai-e2e",
   "version": "0.1.0",
   "private": true,
-  "description": "JavaScript and Playwright learning layer for Automation Mission Control",
+  "description": "Playwright end-to-end verification for the RequestFlow AI SaaS MVP foundation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jmmmdv/RequestFlowAI.git"
+  },
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",

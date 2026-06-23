@@ -86,7 +86,9 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action: cognito-idp:AdminAddUserToGroup
+                Action:
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminUpdateUserAttributes
                 Resource: !Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*'
 
   CognitoTriggerFunction:
@@ -99,28 +101,41 @@ Resources:
       Code:
         ZipFile: |
           const crypto = require('crypto');
-          const { CognitoIdentityProviderClient, AdminAddUserToGroupCommand } = require('@aws-sdk/client-cognito-identity-provider');
+          const {
+            CognitoIdentityProviderClient,
+            AdminAddUserToGroupCommand,
+            AdminUpdateUserAttributesCommand,
+          } = require('@aws-sdk/client-cognito-id-provider');
           const client = new CognitoIdentityProviderClient({});
           exports.handler = async (event) => {
-            if (event.triggerSource.startsWith('PreSignUp_')) {
-              event.request.userAttributes['custom:tenant_id'] = crypto.randomUUID();
-              event.request.userAttributes['custom:organization_name'] ||= 'My Organization';
-            }
             if (event.triggerSource === 'PostConfirmation_ConfirmSignUp') {
+              const tenantId = crypto.randomUUID();
+              const organizationName = event.request.userAttributes['custom:organization_name'] || 'My Organization';
+              await client.send(new AdminUpdateUserAttributesCommand({
+                UserPoolId: event.userPoolId,
+                Username: event.userName,
+                UserAttributes: [
+                  { Name: 'custom:tenant_id', Value: tenantId },
+                  { Name: 'custom:organization_name', Value: organizationName },
+                ],
+              }));
               await client.send(new AdminAddUserToGroupCommand({
                 UserPoolId: event.userPoolId, Username: event.userName, GroupName: 'ADMIN'
               }));
             }
             if (event.triggerSource.startsWith('TokenGeneration_')) {
+              const tenantId = event.request.userAttributes['custom:tenant_id'];
+              const organizationName = event.request.userAttributes['custom:organization_name'] || 'My Organization';
+              if (!tenantId) return event;
               event.response.claimsAndScopeOverrideDetails = {
                 accessTokenGeneration: { claimsToAddOrOverride: {
-                  tenant_id: event.request.userAttributes['custom:tenant_id'],
-                  organization_name: event.request.userAttributes['custom:organization_name'] || 'My Organization',
+                  tenant_id: tenantId,
+                  organization_name: organizationName,
                   email: event.request.userAttributes.email
                 }},
                 idTokenGeneration: { claimsToAddOrOverride: {
-                  tenant_id: event.request.userAttributes['custom:tenant_id'],
-                  organization_name: event.request.userAttributes['custom:organization_name'] || 'My Organization'
+                  tenant_id: tenantId,
+                  organization_name: organizationName
                 }}
               };
             }
@@ -189,8 +204,12 @@ Resources:
       AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows: [code]
       AllowedOAuthScopes: [openid, email, profile]
-      CallbackURLs: [!Ref FrontendUrl]
-      LogoutURLs: [!Ref FrontendUrl]
+      CallbackURLs:
+        - !Ref FrontendUrl
+        - !Sub '${FrontendUrl}/'
+      LogoutURLs:
+        - !Ref FrontendUrl
+        - !Sub '${FrontendUrl}/'
       SupportedIdentityProviders: [COGNITO]
       PreventUserExistenceErrors: ENABLED
       EnableTokenRevocation: true
@@ -369,7 +388,7 @@ Resources:
   DatabasePasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: Automation Mission Control PostgreSQL password
+      Description: RequestFlow AI PostgreSQL password
       GenerateSecretString:
         PasswordLength: 32
         ExcludePunctuation: true
@@ -431,6 +450,17 @@ Resources:
                   - !Ref DatabasePasswordSecret
                   - !If [HasStripeSecrets, !Ref StripeSecretKeyArn, !Ref AWS::NoValue]
                   - !If [HasStripeSecrets, !Ref StripeWebhookSecretArn, !Ref AWS::NoValue]
+        - PolicyName: SyncCognitoInvitations
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminUpdateUserAttributes
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminRemoveUserFromGroup
+                  - cognito-idp:AdminUserGlobalSignOut
+                Resource: !GetAtt UserPool.Arn
 
   Service:
     Type: AWS::AppRunner::Service
@@ -459,6 +489,10 @@ Resources:
               - { Name: DATABASE_USERNAME, Value: !Ref DatabaseUsername }
               - { Name: OAUTH2_ISSUER_URI, Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}' }
               - { Name: FRONTEND_URL, Value: !Ref FrontendUrl }
+              - { Name: COGNITO_USER_POOL_ID, Value: !Ref UserPool }
+              - { Name: AWS_REGION, Value: !Ref AWS::Region }
+              - { Name: INTAKE_RATE_LIMIT_ENABLED, Value: 'true' }
+              - { Name: INTAKE_RATE_LIMIT_REQUESTS_PER_MINUTE, Value: '10' }
               - { Name: STRIPE_PRO_PRICE_ID, Value: !Ref StripeProPriceId }
               - { Name: STRIPE_BUSINESS_PRICE_ID, Value: !Ref StripeBusinessPriceId }
               - { Name: TRACING_ENABLED, Value: !If [HasOtlpEndpoint, 'true', 'false'] }
@@ -575,6 +609,9 @@ Outputs:
     Value: !Ref OperationsDashboard
   CognitoIssuerUri:
     Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+  UserPoolId:
+    Description: Cognito user pool ID for admin CLI drills
+    Value: !Ref UserPool
   CognitoClientId:
     Value: !Ref UserPoolClient
   CognitoManagedLoginDomain:

@@ -1,8 +1,10 @@
-# SaaS launch guide
+# RequestFlow AI SaaS launch guide
 
-This package turns the portfolio application into a deployable SaaS foundation without making a
-false claim that paid cloud resources were provisioned. Local development remains frictionless;
-the production profile requires signed Cognito JWTs and tenant claims.
+This package makes the RequestFlow AI foundation deployable without claiming that paid cloud
+resources, production identity, or live payments have been configured. Local development remains
+frictionless; the production profile requires signed Cognito JWTs and tenant claims.
+
+This is production-shaped launch documentation, not evidence of a completed commercial launch.
 
 ## Product flow
 
@@ -30,14 +32,25 @@ quota slot, and an approved plan reserves capacity for all work items before too
 build. Configure these production variables:
 
 ```text
-MISSION_API_BASE_URL=https://YOUR-APP-RUNNER-HOST
-MISSION_COGNITO_DOMAIN=https://YOUR-PREFIX.auth.YOUR-REGION.amazoncognito.com
-MISSION_COGNITO_CLIENT_ID=YOUR-PUBLIC-CLIENT-ID
+REQUESTFLOW_API_BASE_URL=https://YOUR-APP-RUNNER-HOST
+REQUESTFLOW_COGNITO_DOMAIN=https://YOUR-PREFIX.auth.YOUR-REGION.amazoncognito.com
+REQUESTFLOW_COGNITO_CLIENT_ID=YOUR-PUBLIC-CLIENT-ID
+REQUESTFLOW_PUBLIC_ORGANIZATION_SLUG=YOUR-ORGANIZATION-SLUG
 ```
+
+The original `MISSION_*` names remain supported as aliases so existing Vercel projects keep
+working during the rename. New deployments should use `REQUESTFLOW_*`.
 
 With all identity values present, the UI displays sign-in/sign-out and calls the remote API with an
 access token. Without them, a `.vercel.app` deployment intentionally becomes the labeled local-data
-portfolio demo. Add `?demo` to force demo mode while diagnosing production identity.
+pilot demo. Add `?demo` to force demo mode while diagnosing production identity.
+
+The shareable page is `/public-request.html?organization={organizationSlug}`. Public intake uses
+`/api/public/intake/{organizationSlug}` and never accepts a tenant UUID from the browser. The slug
+is a public lookup key rather than a secret; only an active organization resolves, and all writes
+use the server-stored tenant UUID. Before broadly publishing a portal, add WAF/rate limiting, bot
+protection, monitoring, privacy terms, a retention/deletion policy, and—where link privacy matters—
+a random rotatable portal token. These production abuse controls are not faked by the local demo.
 
 ## Invitation boundary
 
@@ -55,7 +68,7 @@ key and tenant metadata. The webhook controller verifies the timestamped HMAC ov
 request body with a five-minute tolerance and constant-time comparison. Unknown subscription events
 are harmless; inactive/cancelled subscriptions fall back to FREE.
 
-## Evidence to show an interviewer
+## Verification evidence
 
 ```bash
 ./mvnw -Dtest=SaasProductIntegrationTest,TenantIsolationSecurityTest test
@@ -64,5 +77,6 @@ npm test
 ```
 
 Then walk through the organization overview, a rejected FREE-plan quota request, admin-only invite,
-Stripe test Checkout, a signed webhook, and the resulting plan/usage change. Record the external
-AWS and Stripe drill date only after it has actually run.
+Stripe test Checkout, a signed webhook, and the resulting plan/usage change. Record live drill
+evidence in [DRILL-LOG.md](DRILL-LOG.md) using the step-by-step runbook in
+[EXTERNAL-DRILLS.md](EXTERNAL-DRILLS.md). Do not mark drills complete until they have actually run.

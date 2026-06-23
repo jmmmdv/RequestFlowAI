@@ -22,7 +22,7 @@ pipeline {
     stage('End-to-end tests') { steps { sh 'CI=true npm test' } }
     stage('Package image') {
       when { branch 'main' }
-      steps { sh 'docker build -t automation-mission-control:${BUILD_NUMBER} .' }
+      steps { sh 'docker build -t requestflow-ai:${BUILD_NUMBER} .' }
     }
   }
   post {

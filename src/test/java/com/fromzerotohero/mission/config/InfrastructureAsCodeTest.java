@@ -45,6 +45,8 @@ class InfrastructureAsCodeTest {
                 .contains("Type: AWS::Cognito::UserPoolClient")
                 .contains("AllowedOAuthFlows: [code]")
                 .contains("custom:tenant_id")
+                .contains("AdminUpdateUserAttributes")
+                .contains("UserPoolId:")
                 .contains("STRIPE_WEBHOOK_SECRET")
                 .contains("StripeWebhookSecretArn");
     }
@@ -57,6 +59,23 @@ class InfrastructureAsCodeTest {
         assertThat(Path.of("docs/operations/SLO.md")).exists();
         assertThat(Path.of("docs/operations/INCIDENT-RUNBOOK.md")).exists();
         assertThat(Path.of("docs/operations/RESTORE-DRILL.md")).exists();
+        assertThat(Path.of("docs/saas/EXTERNAL-DRILLS.md")).exists();
+        assertThat(Path.of("docs/saas/DRILL-LOG.md")).exists();
+        assertThat(Path.of("scripts/drills/verify-prerequisites.sh")).exists();
+        assertThat(Path.of("scripts/drills/record-drill.sh")).exists();
+        assertThat(Path.of("scripts/drills/deploy-cognito-trigger.sh")).exists();
+        assertThat(Path.of("scripts/drills/setup-stripe-sandbox.sh")).exists();
+        assertThat(Path.of("scripts/drills/verify-rds-backups.sh")).exists();
+        assertThat(Path.of("scripts/drills/smoke-public-intake.sh")).exists();
+    }
+
+    @Test
+    void productionTemplateSyncsCognitoOnInvitationAccept() throws Exception {
+        String template = Files.readString(AWS_TEMPLATE);
+        assertThat(template)
+                .contains("COGNITO_USER_POOL_ID")
+                .contains("SyncCognitoInvitations")
+                .contains("cognito-idp:AdminUpdateUserAttributes");
     }
 
     @Test
@@ -68,6 +87,7 @@ class InfrastructureAsCodeTest {
                 .contains("\"outputDirectory\": \"src/main/resources/static\"");
         assertThat(Files.readString(Path.of("src/main/resources/static/app.js")))
                 .contains("location.hostname.endsWith('.vercel.app')")
-                .contains("mission-control-demo-v1");
+                .contains("requestflow-ai-demo-v1")
+                .contains("legacyDemoStateKey");
     }
 }

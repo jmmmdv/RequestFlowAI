@@ -1,257 +1,221 @@
-AGENTS.md
+# AGENTS.md
 
-Mission
+## Project identity
 
-You are working on MissionOps AI, a commercialized version of the existing Automation Mission Control repository.
+This repository is published as **[RequestFlowAI](https://github.com/jmmmdv/RequestFlowAI)** on GitHub.
+The product being developed inside it is **RequestFlow AI**.
 
-The goal is to turn this repository from a strong engineering portfolio project into a sellable first product:
+RequestFlow AI is a SaaS MVP foundation for small businesses, agencies, consultants, and small
+IT/support teams. It helps them collect client or internal requests, classify and prioritize those
+requests, turn them into trackable work items, manage status, preserve audit evidence, and later
+upgrade to paid plans.
 
-MissionOps AI helps small service businesses turn messy customer or employee requests into organized, trackable, AI-assisted work with human approval and audit history.
+The previous product identity was **Automation Mission Control**. When changing user-facing
+product copy, documentation, UI labels, and demo material, gradually reposition the product toward
+**RequestFlow AI**. Preserve useful engineering evidence from the old version unless explicitly
+asked to remove it.
 
-The first sellable MVP must be simple, focused, and demo-ready.
+This repository must serve two purposes:
 
-Product Direction
+1. A real SaaS MVP foundation that can be shown to first pilot users.
+2. A strong professional Java/Spring Boot backend portfolio proving production-shaped engineering
+   skills.
 
-Do not build a generic developer portfolio app.
+Do not treat this as a random tutorial repository. Every change should make the project more
+useful, safer, clearer, more testable, and closer to a real paid SaaS product.
 
-Transform the app into a customer-facing SaaS product for small service businesses.
+## Product direction
 
-Initial niche:
+RequestFlow AI should solve this problem:
 
-* clinics
-* consultants
-* immigration/service offices
-* small law offices
-* limo/fleet/service companies
-* local professional service businesses
+Small businesses receive client or internal requests from email, WhatsApp, text messages, calls,
+and forms. Requests get lost, priorities are unclear, follow-up is messy, and owners do not have
+one simple dashboard to track the work.
 
-Core customer promise:
+RequestFlow AI should provide:
 
-A business receives requests from clients or staff. MissionOps AI classifies the request, creates work items, recommends next actions, requires approval for risky actions, and records an audit trail.
+- a customer-facing landing page
+- a simple Start Free flow
+- a public request intake form
+- request classification
+- priority suggestion
+- internal summary
+- recommended next action
+- work-item/status tracking
+- organization/team support
+- tenant-safe data boundaries
+- audit trail for important actions
+- Free/Pro/Business plan limits
+- Stripe billing foundation
+- demo mode for first customer walkthroughs
+- production mode documentation
 
-Current Repository Context
+Keep the language business-friendly. Customer-facing pages should avoid unnecessary developer
+jargon.
 
-This repository already includes or claims support for:
+## Target users
 
-* Java 21
-* Spring Boot 3.5
-* Spring REST APIs
-* HATEOAS
-* JWT / OAuth2 resource server concepts
-* tenant-scoped persistence
-* organizations, memberships, invitations, roles
-* FREE / PRO / BUSINESS quotas
-* Stripe Checkout and webhook synchronization
-* bounded planning agent
-* human approval for high-impact actions
-* audit records with tenant, user, correlation ID, outcome, and timestamp
-* Flyway migrations
-* PostgreSQL profile
-* H2 local development
-* Testcontainers
-* JUnit
-* Playwright
-* GitHub Actions
-* Jenkins
-* Docker
-* AWS App Runner / RDS / CloudFormation direction
-* observability with OpenTelemetry, Grafana, Prometheus, Tempo, CloudWatch
-* documentation and demo scripts
+Prioritize these users:
 
-Preserve the strong engineering foundation.
+- small business owners
+- small service businesses
+- web/design/marketing agencies
+- consultants
+- small IT/support teams
+- teams that need a simple request portal before they are ready for expensive enterprise tools
 
-Commercial MVP Goal
+Do not build for “everyone.” Keep the MVP focused on request intake, organization, tracking, and
+simple automation assistance.
 
-Build only what is necessary to make the product understandable and sellable to a first customer.
+## Main stack
 
-The MVP must support this demo flow:
+Backend:
 
-1. A business owner logs in or opens the demo.
-2. They see a clear MissionOps AI dashboard.
-3. A customer or employee request is submitted.
-4. The system classifies the request.
-5. The system assigns priority.
-6. The system creates or suggests work items.
-7. The system shows an AI-style recommendation.
-8. Risky or high-impact actions require human approval.
-9. The owner can update status.
-10. The audit trail shows what happened and why.
+- Java 21
+- Spring Boot
+- Spring Web
+- Spring Data JPA
+- Spring Security
+- OAuth2 Resource Server
+- HATEOAS
+- Flyway
+- H2 for local/test
+- PostgreSQL for production-shaped integration
+- Testcontainers
+- JaCoCo
 
-Development Rules
+Frontend / automation:
 
-General
+- JavaScript
+- Static dashboard under Spring resources
+- Playwright E2E tests
 
-* Make small, reviewable changes.
-* Do not rewrite the whole app.
-* Do not remove working tests unless replacing them with better tests.
-* Do not introduce secrets into the repository.
-* Keep local development simple.
-* Prefer boring, reliable engineering over clever abstractions.
-* Preserve existing architecture unless there is a clear reason to change it.
-* Document every new environment variable.
-* Keep the app demo-friendly.
+Delivery / operations:
 
-Product Rules
+- Maven
+- Docker
+- Docker Compose
+- Jenkins
+- GitHub Actions
+- AWS CloudFormation / App Runner / RDS concepts
+- Observability with Prometheus, Grafana, Tempo, OpenTelemetry, and CloudWatch concepts
 
-* Every screen must make sense to a non-technical business owner.
-* Avoid developer-only language in the UI.
-* Replace vague terms like “agent plan” with customer-friendly labels like “AI recommendation,” “suggested next steps,” or “approval needed.”
-* The product must clearly answer:
-    * What request came in?
-    * Who is responsible?
-    * How urgent is it?
-    * What does AI recommend?
-    * What needs human approval?
-    * What happened already?
+SaaS / product:
 
-Backend Rules
+- organizations
+- memberships
+- roles
+- invitations
+- tenant isolation
+- plan quotas
+- Stripe Checkout
+- verified Stripe webhooks
+- audit trail
+- demo mode vs production mode separation
 
-* Follow existing Spring Boot patterns.
-* Keep tenant isolation strict.
-* Tenant identity must come from trusted auth context, not request input.
-* Validate all request bodies.
-* Return structured errors.
-* Keep APIs testable.
-* Add or update tests for all API behavior changes.
-* Keep audit records durable and attributable.
-* Risky actions must remain idempotent and approval-gated.
+## Non-negotiable engineering rules
 
-Frontend Rules
+Before making changes:
 
-* Keep the UI simple and business-focused.
-* Do not create a complex design system unless necessary.
-* Prefer clear cards, tables, status badges, and call-to-action buttons.
-* The first screen should explain the product in 10 seconds.
-* Make the demo data realistic for a small business.
-* Avoid fake “magic AI” claims if the backend is still deterministic or rule-based.
+1. Read `README.md`.
+2. Read this `AGENTS.md`.
+3. Inspect the relevant source and test files.
+4. Prefer small, safe, reviewable changes.
+5. Do not rewrite the architecture unless explicitly asked.
+6. Do not delete existing tests to make the build pass.
+7. Do not weaken security, tenant isolation, auditability, idempotency, or coverage gates.
+8. Do not trust client-submitted tenant IDs as an authority.
+9. Tenant identity must come from a safe server-side or verified identity boundary.
+10. Do not hardcode secrets.
+11. Do not commit API keys, Stripe secrets, database passwords, Cognito secrets, tokens, or private
+    credentials.
+12. Do not expose Stripe secret keys or other server secrets to browser code.
+13. Do not claim a feature is complete unless the code, tests, and documentation prove it.
+14. If a feature is demo-only, local-only, a lab, a roadmap item, or a planned extension, label it
+    clearly.
+15. Keep demo mode and production mode clearly separated.
+16. Keep the project useful for both SaaS launch preparation and professional portfolio review.
 
-Testing Rules
+## Product honesty rules
 
-Before finishing any task, run the most relevant checks:
+Never make false claims.
 
-* Java changes: ./mvnw test or ./mvnw clean verify
-* Frontend / Playwright changes: npm test
-* Dependency changes: run both Java and npm checks if possible
+Do not claim:
 
-If a command fails, diagnose it and either fix it or clearly explain the failure.
+- real paying customers exist unless they actually do
+- real production payments are live unless Stripe production is configured and verified
+- production auth is complete unless it is actually configured and tested
+- the system uses an LLM if the implementation is rule-based
+- enterprise-grade security unless the relevant controls are implemented and documented
+- production launch is complete while known launch drills remain unfinished
 
-Git Rules
+Prefer honest language:
 
-* Work on a branch.
-* Use meaningful commits.
-* Do not commit generated junk, local secrets, build artifacts, or node_modules.
-* Keep pull request summaries clear:
-    * What changed
-    * Why it changed
-    * How it was tested
-    * Screenshots if UI changed
+- “SaaS MVP foundation”
+- “pilot-ready demo”
+- “production-shaped”
+- “demo mode”
+- “Stripe-ready foundation”
+- “production configuration required”
+- “rule-based assistant”
+- “LLM extension path documented”
 
-Product Vocabulary
+## RequestFlow AI MVP priorities
 
-Use these terms in customer-facing UI:
+When asked to turn this project into a money-making SaaS product, prioritize work in this order:
 
-* Request
-* Priority
-* Status
-* Recommended action
-* Suggested next steps
-* Approval needed
-* Audit trail
-* Team
-* Business
-* Plan
-* Monthly usage
+1. Product repositioning from Automation Mission Control to RequestFlow AI
+2. Customer-facing landing page
+3. Pricing section with Free / Pro / Business
+4. Public request intake form
+5. Dashboard visibility for submitted requests
+6. Request classification and priority suggestion
+7. Internal summary and recommended next action
+8. Simple onboarding / Start Free flow
+9. Demo mode with sample data for first 5 customer demos
+10. Billing page and Stripe checkout integration
+11. Production readiness checklist
+12. First pilot customer documentation
 
-Avoid these terms in customer-facing UI unless they are in technical docs:
+Do not jump to large, complex features before the basic customer journey works.
 
-* agent_run
-* tool budget
-* tenant
-* HATEOAS
-* idempotency
-* OAuth2 resource server
-* Testcontainers
-* Flyway
+## UI and copy rules
 
-First MVP Features
+Customer-facing copy should be simple, clear, and non-technical.
 
-Must Have
+Use language like:
 
-* MissionOps AI branding
-* business-focused landing/dashboard copy
-* realistic request intake form
-* request list
-* request detail view
-* priority classification
-* AI-style summary or recommendation
-* status update workflow
-* approval-needed state for risky actions
-* audit trail visibility
-* simple demo data
-* updated README explaining product direction
-* tests for the main flow
+- “Collect requests in one place”
+- “Turn requests into trackable work”
+- “Know what is urgent”
+- “Keep your team organized”
+- “Start free”
+- “Upgrade when your team grows”
 
-Should Have
+Avoid customer-facing language like:
 
-* niche selector or demo presets:
-    * clinic
-    * consultant office
-    * fleet/limo company
-    * small law office
-* pricing page or pricing section
-* setup checklist for first customer
-* improved demo script
-* screenshots in docs
+- “HATEOAS”
+- “tenant claim”
+- “idempotency key”
+- “resource server”
+- “bounded orchestration”
+- “Flyway migration history”
 
-Not Yet
+Technical terms can remain in developer documentation, architecture docs, tests, and portfolio
+evidence.
 
-Do not build these until the MVP flow is clear:
+## Testing rules
 
-* huge CRM
-* complex calendar integration
-* complex email ingestion
-* advanced analytics
-* mobile app
-* real multi-provider AI agent marketplace
-* unnecessary microservices
-* unnecessary redesign
+After backend changes, run:
 
-Suggested Implementation Order
+```bash
+./mvnw clean verify
+```
 
-1. Audit the current repository and summarize what exists.
-2. Identify the fastest path to a customer-facing MVP.
-3. Create a docs/product/MISSIONOPS-MVP.md plan.
-4. Rename or reframe customer-facing UI copy to MissionOps AI.
-5. Add realistic small-business demo data.
-6. Improve request intake and dashboard flow.
-7. Add AI recommendation fields if missing.
-8. Add approval-needed flow if not visible enough.
-9. Add audit trail visibility to the UI.
-10. Add tests for the complete customer demo flow.
-11. Update README and demo script.
-12. Run full checks.
-13. Prepare a clean PR.
+After frontend changes, also run:
 
-Definition of Done
-
-A task is done only when:
-
-* the app still runs locally
-* the main tests pass or failures are clearly explained
-* the UI is understandable to a non-technical customer
-* the README or docs are updated when behavior changes
-* no secrets are committed
-* the change supports the MissionOps AI MVP direction
-
-How to Report Back
-
-At the end of each task, respond with:
-
-1. Summary of changes
-2. Files changed
-3. Commands run
-4. Test results
-5. Remaining risks
-6. Recommended next step
-
-Be direct. Do not hide problems.
+```bash
+npm ci
+npx playwright install chromium
+npm test
+```

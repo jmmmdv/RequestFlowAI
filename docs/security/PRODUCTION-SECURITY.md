@@ -24,10 +24,40 @@ tenant returns `404`, which avoids confirming that the row exists.
 | Endpoint | Policy |
 |---|---|
 | `/actuator/health/**`, `/actuator/info` | Public |
+| `GET/POST /api/public/intake/{organizationSlug}` | Public; server resolves tenant from active organization slug |
+| `GET /api/requests` | Authenticated and tenant-scoped |
 | `/api/work-items/**` | Authenticated |
 | `POST /api/agent/plan` | `MEMBER` or `ADMIN` |
 | `POST /api/agent/runs/{id}/approve` | `ADMIN` |
 | `GET /api/agent/runs` | `ADMIN` |
+
+## Public request portal boundary
+
+Businesses share `/public-request.html?organization={organizationSlug}`. The slug is a public
+identifier, not a credential. The API validates its format, resolves only an active organization,
+and uses the organization's stored UUID for request and work-item writes. The form body has no
+tenant-ID field. Requester-selected category and urgency are classification hints only; they do not
+grant a role, approve automation, or bypass the organization's work-item quota.
+
+An active portal intentionally reveals the organization's display name. Unknown and inactive slugs
+return the same `404`. Rate limiting, honeypot bot protection, optional unguessable portal tokens,
+and configurable request retention are implemented and covered by integration tests. Before wide
+public distribution, add edge/WAF rate limits for multi-instance deployments and complete live
+abuse drills under production traffic.
+
+## Verification evidence
+
+`TenantIsolationSecurityTest` proves that unauthenticated access is rejected, roles protect agent
+execution and billing checkout, tenant A cannot list, fetch, or mutate tenant B data, invitation
+acceptance requires a matching email claim, Swagger/OpenAPI requires admin when security is enabled,
+and agent audit rows preserve user, tenant, and correlation ID attribution.
+
+Stripe webhook events are deduplicated by event id after signature verification.
+
+This is the identity and isolation foundation—not the whole security program. Before public GA,
+add WAF/rate limiting at the edge for scaled intake, secret rotation drills, dependency and
+container scanning in CI, backup restore drills, and an external penetration test. See
+[SECRET-ROTATION.md](../operations/SECRET-ROTATION.md).
 
 ## Configuration
 
@@ -42,13 +72,3 @@ export DATABASE_PASSWORD='from-a-secret-manager'
 
 In AWS, inject these values from Secrets Manager or Parameter Store. Do not store credentials in
 CloudFormation parameters, shell history, `.env`, or CI logs.
-
-## Verification evidence
-
-`TenantIsolationSecurityTest` proves that unauthenticated access is rejected, roles protect agent
-execution, tenant A cannot list or fetch tenant B data, and agent audit rows preserve user,
-tenant, and correlation ID attribution.
-
-This is the identity and isolation foundation—not the whole security program. Before public GA,
-add browser authorization-code + PKCE login, WAF/rate limiting, secret rotation, dependency and
-container scanning, backup restore drills, and an external penetration test.

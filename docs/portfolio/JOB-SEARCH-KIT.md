@@ -1,94 +1,99 @@
-# Job-search kit
+# RequestFlow AI portfolio and job-search kit
 
-Copy-paste content built from this project. Replace `_placeholders_` before using. Keep every
-claim honest — it all maps to working code and tests in this repo.
+Copy-paste material built from working code and tests in this repository. Replace placeholders and
+keep every claim within the evidence. The project is both a SaaS MVP foundation and an engineering
+portfolio; neither side needs to hide the other.
 
----
-
-## LinkedIn headline (pick one)
+## LinkedIn headline options
 
 - Java / Spring Boot Engineer · Multi-tenant SaaS, secure REST APIs, AWS, test-driven delivery
-- Backend Engineer (Java 21, Spring Boot) · SaaS multi-tenancy · billing · bounded AI automation
-- Software Engineer · Spring Boot SaaS · OAuth2 security · CI/CD · AWS · Stripe
+- Backend Engineer · Java 21 · SaaS multi-tenancy · Stripe · bounded automation · PostgreSQL
+- Software Engineer building RequestFlow AI · Spring Boot · OAuth2 · CI/CD · AWS
 
-## LinkedIn "About" snippet
+## LinkedIn About snippet
 
-> I build production-shaped backends, not demos. My capstone, Automation Mission Control, is a
-> multi-tenant SaaS (Java 21, Spring Boot, PostgreSQL) with JWT-backed tenant isolation, role-based
-> access, Stripe billing with signature-verified webhooks, and a bounded automation agent that
-> keeps high-impact actions behind human approval. Every layer is tested — security, API/DB
-> consistency, PostgreSQL via Testcontainers, and Playwright end-to-end — behind a single delivery
-> gate with an 80% coverage floor, deployable to AWS via CloudFormation. I care about safety,
-> auditability, and shipping software a team can actually operate.
+> I build production-shaped Java backends around real product problems. My current project,
+> RequestFlow AI, is a SaaS MVP foundation for small service teams that need to turn incoming
+> requests into trackable work. The Spring Boot backend includes JWT-backed tenant isolation,
+> role-based access, organizations and invitations, plan quotas, Stripe Checkout with verified
+> webhooks, and a rule-based planning assistant with human approval and audit history. Security,
+> API/database consistency, PostgreSQL migrations, and browser journeys are automated behind an
+> 80% coverage gate. It is a working pilot-ready demo with a documented AWS path—not a claim of a
+> completed commercial launch.
 
-## LinkedIn "Featured" caption
+## LinkedIn Featured caption
 
-> **Automation Mission Control — multi-tenant SaaS + bounded automation agent**
-> Java 21 · Spring Boot · PostgreSQL · OAuth2 · Stripe · Playwright · AWS. Tenant-isolated security
-> (proven by tests), human-in-the-loop agent with full audit trail, and a one-command delivery gate.
-> Case study and 5-minute demo linked. Live demo: _add your URL_ · Code: _repo URL_
+> **RequestFlow AI — SaaS request-management foundation + production-shaped Java backend**
+> Java 21 · Spring Boot · PostgreSQL · OAuth2 · Stripe · Playwright · AWS. Public request intake,
+> rule-based triage, trackable work,
+> tenant-isolated data, team roles, quotas, verified billing events, and bounded automation with a
+> full audit trail. Case study: _link_ · Demo: _link_ ·
+> Code: https://github.com/jmmmdv/RequestFlowAI
 
----
+## Resume project entry
 
-## Resume — Projects section entry
+**RequestFlow AI** — SaaS MVP foundation, solo project · Java 21, Spring Boot, PostgreSQL, AWS,
+Stripe · [github.com/jmmmdv/RequestFlowAI](https://github.com/jmmmdv/RequestFlowAI)
 
-**Automation Mission Control** — _solo project_ · Java 21, Spring Boot, PostgreSQL, AWS, Stripe
-_(github.com/jmmmdv/FromZeroToHero)_
+- Designed and built a tenant-scoped request/work management REST API with validation, HATEOAS,
+  status tracking, and RFC 9457-style problem responses; verified JWT identity supplies the tenant
+  boundary and security tests prove cross-organization data cannot be listed or fetched.
+- Implemented idempotent public intake that resolves tenant ownership server-side, preserves the
+  original request, applies deterministic category/priority/summary/next-action rules, and creates
+  quota-checked work visible in the authenticated dashboard.
+- Implemented a deterministic planning assistant with classification rules, tool budgets,
+  idempotent human approval for high-impact actions, and attributable audit records; gated behavior
+  with a 27-case golden/adversarial evaluation suite.
+- Built a SaaS control plane with organizations, memberships, roles, expiring invitations,
+  FREE/PRO/BUSINESS quotas, Stripe Checkout, and replay-resistant signature verification for
+  webhook-driven subscription state.
+- Established one delivery gate spanning unit, integration, security, contract, PostgreSQL
+  Testcontainers, Playwright E2E, and an 80% JaCoCo coverage floor; used one Flyway migration
+  history across H2 and PostgreSQL.
+- Declared an AWS deployment path with Docker, App Runner, private encrypted RDS, Secrets Manager,
+  Cognito, OpenTelemetry, Grafana, CloudWatch, SLOs, and operational runbooks.
 
-- Designed and built a multi-tenant SaaS REST API (Spring Web + HATEOAS) with validation and
-  RFC 9457 problem responses, enforcing tenant identity from verified JWT claims at the repository
-  layer; automated security tests prove cross-organization data cannot be listed or fetched.
-- Implemented a bounded planning agent that classifies goals, enforces policy and tool-call
-  budgets, requires idempotent human approval for high-impact actions, and writes an attributable
-  audit record (tenant, user, correlation ID, outcome) per run; behavior gated by a 27-case
-  golden/adversarial evaluation suite in CI.
-- Shipped a SaaS control plane — organizations, roles, expiring invitations, FREE/PRO/BUSINESS
-  quotas, and Stripe Checkout with constant-time, replay-resistant webhook verification.
-- Established one delivery gate (unit, integration, security, contract, PostgreSQL Testcontainers,
-  Playwright E2E) with an 80% JaCoCo coverage floor; one Flyway migration history runs on H2, CI,
-  and RDS.
-- Automated build and deploy with GitHub Actions and Jenkins, containerized with Docker, and
-  provisioned AWS (App Runner, private RDS, Secrets Manager) via CloudFormation with OpenTelemetry,
-  Grafana, and CloudWatch observability.
+## One-line version
 
-## Resume — one-line version (for a skills/summary line)
+- Built RequestFlow AI, a production-shaped Spring Boot SaaS foundation with tested tenant
+  isolation, work tracking, Stripe-ready billing, bounded automation, and an 80%-coverage CI gate.
 
-- Built a production-shaped multi-tenant SaaS (Spring Boot, PostgreSQL, AWS) with tested tenant
-  isolation, Stripe billing, a human-in-the-loop automation agent, and an 80%-coverage CI gate.
+## Recruiter or hiring-manager message
 
----
+> Hi _name_ — I am a Java/Spring Boot engineer building RequestFlow AI, a SaaS MVP foundation for
+> turning small-business requests into trackable work. The working backend demonstrates tested
+> multi-tenant isolation, organizations and roles, Stripe-ready billing, bounded automation, and a
+> production-shaped AWS path. Case study: _link_. I would enjoy discussing how that evidence maps
+> to _role/team_.
 
-## Outreach templates
+## Application note
 
-### Recruiter / hiring-manager DM
+> I am applying for _role_. RequestFlow AI is the clearest example of how I work: I started with a
+> customer problem, built a tenant-safe Spring Boot SaaS foundation, and backed the security,
+> billing, automation, and data claims with tests and operational documentation. It is honest about
+> its current boundary—a pilot-ready foundation, not a completed launch. Case study: _link_. I would
+> welcome the chance to walk through any layer.
 
-> Hi _name_ — I'm a backend engineer focused on Java/Spring Boot and SaaS. I recently built a
-> multi-tenant SaaS with tested tenant isolation, Stripe billing, a human-in-the-loop automation
-> agent, and an 80%-coverage delivery gate deployable to AWS. Two-minute case study here: _link_.
-> I'd love to talk about _role/team_ — open to a quick chat?
+## Founder or pilot-customer description
 
-### Application note / cover blurb
+> RequestFlow AI is being built for small service teams that lose client or internal requests
+> across email, messages, calls, and forms. The goal is one simple place to collect requests, know
+> what is urgent, turn them into work, and track status. The current demo proves the team workspace,
+> safety, and SaaS foundation, including a working public request-to-work journey. I am looking for
+> pilot feedback and completing production abuse/privacy controls before claiming commercial launch.
 
-> I'm applying for _role_. Rather than describe my experience abstractly, I'll point to working
-> software: Automation Mission Control is a multi-tenant Spring Boot SaaS I designed, built, tested,
-> and prepared for AWS deployment. It demonstrates the things this role needs — secure
-> multi-tenancy, REST API design, billing, CI/CD, and safe automation — with tests proving each
-> claim. Case study: _link_. I'd welcome the chance to walk through any layer.
-
----
-
-## ATS keywords to weave in naturally
+## ATS keywords
 
 Java 21, Spring Boot, Spring Web, Spring Data JPA, Spring Security, OAuth2, JWT, REST API, HATEOAS,
 multi-tenancy, RBAC, PostgreSQL, Flyway, Testcontainers, JUnit, Playwright, CI/CD, GitHub Actions,
-Jenkins, Docker, AWS, App Runner, RDS, CloudFormation, Stripe, observability, OpenTelemetry, Grafana.
+Jenkins, Docker, AWS, App Runner, RDS, CloudFormation, Stripe, OpenTelemetry, Grafana.
 
----
+## Rules for using this kit
 
-## Three rules for using this kit
-
-1. **Be honest.** The agent is rule-based (not an LLM) and the public site is a portfolio preview;
-   say so if asked. Senior engineers respect accurate scope.
-2. **Lead with evidence.** Always link the [case study](CASE-STUDY.md) and the recorded demo.
-3. **Tailor per application.** Mirror the role's language (e.g. "platform", "billing", "automation")
-   using the keyword list above.
+1. Say **SaaS MVP foundation**, **pilot-ready demo**, and **rule-based assistant** until stronger
+   evidence exists.
+2. Never claim paying customers, live production billing, LLM usage, or completed production drills
+   without proof.
+3. Lead with the RequestFlow AI customer problem, then link the engineering evidence.
+4. Tailor the emphasis to the audience: customer workflow for pilots, system design and tests for
+   engineering roles.

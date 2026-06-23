@@ -1,69 +1,96 @@
-# Demo script (5 minutes)
+# RequestFlow AI demo script (5 minutes)
 
-Use this for a recorded video or a live interview. Goal: prove the project is real, safe, and
-production-shaped — without rambling. Practice it twice; aim for 5 minutes.
+Use this for a first-customer conversation, recorded portfolio demo, or interview. Lead with the
+request-management problem, then show the engineering evidence. Keep the scope honest.
 
 ## Before you start
 
-- [ ] App running: `./mvnw spring-boot:run` (or your live demo URL open).
-- [ ] Tabs open: dashboard, `/swagger-ui.html`, the `TenantIsolationSecurityTest` file, and a
-      terminal in the repo.
-- [ ] Optional: observability lab up (`docker compose --profile observability up -d`) with Grafana.
-- [ ] Say the one-line pitch out loud once so it is crisp.
+- [ ] Run `./mvnw spring-boot:run` or open the labeled demo URL.
+- [ ] Open `/public-request.html?organization=local`, the dashboard, `/swagger-ui.html`,
+      `TenantIsolationSecurityTest`, and a terminal.
+- [ ] Optional: start Grafana with `docker compose --profile observability up -d`.
+- [ ] Reset browser-local demo data if you want a predictable walkthrough.
 
 ## Talk track
 
-**0:00 — Framing (20s)**
-> "This is Automation Mission Control: a multi-tenant SaaS where a team manages a delivery board
-> and a bounded agent turns goals into auditable work. I built it to show production concerns —
-> security, billing, testing, and safe automation — working together, not as separate demos."
+**0:00 — The customer problem (30s)**
 
-**0:20 — Product tour (60s)**
-- Show the dashboard: work items, the SaaS panel (plan + quota meters), and the Team & access panel.
-- Create a work item. Point out it is tenant-scoped and validated.
+> "This is RequestFlow AI. Small service teams receive requests through email, messages, calls,
+> and forms, then struggle to decide what is urgent and track what happens next. RequestFlow AI is
+> being built to collect those requests, turn them into trackable work, and keep the team aligned."
 
-**1:20 — The agent and its guardrails (75s)**
-- Enter a routine goal → show it executes and creates work items.
-- Enter an urgent/high-impact goal (e.g. "Fix urgent production outage").
-  > "Notice zero tools ran. The policy classified this as high-impact and paused it for approval."
-- Approve it from the audit trail.
-  > "Approval is idempotent — retrying never creates duplicate work. Every run records tenant,
-  > user, correlation ID, and outcome."
+> "What you are seeing is a working SaaS foundation and pilot-ready demo, not a claim that the
+> entire commercial product is launched."
 
-**2:35 — Security is the headline (60s)**
+**0:30 — Public request journey (75s)**
+
+- Open the dedicated share link: `/public-request.html?organization=local`.
+- Enter a requester, company, and “Booking form is not working” request.
+- Choose **Support** and **Urgent**, then submit.
+- Show the `RF-XXXXXXXX` reference, **New** status, classification, and suggested priority.
+- Open the dashboard and show the same company/request in the inbox and its automatically created
+  trackable work item.
+
+> "A business shares one organization-specific form link. The slug is resolved to an active
+> organization on the server; the browser never submits or chooses a tenant ID. Category and
+> urgency are requester signals, not permission or approval boundaries."
+
+**1:45 — Rule-based request assistance (60s)**
+
+- Enter a routine request and choose **Create work plan**.
+- Show the bounded steps created on the board.
+- Enter an urgent request, such as “Urgent production outage for the client portal.”
+
+> "The assistant is intentionally rule-based today. It can apply deterministic classification and
+> priority rules, but it is not being marketed as an LLM. High-impact work pauses before side
+> effects and waits for a person."
+
+- Approve the pending plan from the automation history.
+- Explain that retrying the same idempotency key does not duplicate work.
+
+**2:45 — Tenant safety and audit evidence (60s)**
+
 - Open `TenantIsolationSecurityTest`.
-  > "Tenant identity comes only from a verified JWT claim, never from request input. This test
-  > proves one organization cannot list or directly fetch another's data. That's the number-one
-  > multi-tenant failure mode, and it's covered."
 
-**3:35 — Proof it's production-shaped (60s)**
-- Show `/swagger-ui.html` (discoverable API) and mention Stripe Checkout + signed webhooks.
-- In the terminal: `./mvnw clean verify`.
-  > "One command runs unit, integration, security, contract, and PostgreSQL Testcontainers tests,
-  > and fails below 80% coverage. The same Flyway migrations run on H2, CI, and RDS."
+> "Tenant identity comes from a verified JWT boundary, never from a client-submitted tenant ID.
+> Tests prove one organization cannot list or fetch another organization's work. Each automated
+> decision also records tenant, user, correlation ID, and outcome."
 
-**4:35 — Close (25s)**
-> "So: a real SaaS control plane, a safe auditable agent, and a single enforced delivery gate, with
-> a documented path to AWS. Happy to go deep on any layer."
+**3:45 — SaaS and delivery foundation (50s)**
 
-## Likely interview questions and crisp answers
+- Show `/swagger-ui.html` and mention organizations, invitations, quotas, Checkout, and verified
+  webhooks.
+- Run or show the result of `./mvnw clean verify`.
 
-- **"How do you stop tenant data leaking?"** Tenant ID is read from a verified JWT claim and applied
-  at the repository layer; client input is never trusted. `TenantIsolationSecurityTest` proves list
-  and direct-ID isolation.
-- **"Why a rule-based agent and not an LLM?"** I wanted orchestration, guardrails, budgets, and
-  evaluation to be deterministic and testable first. The LLM seam is documented; the safety scaffold
-  is the hard and valuable part.
-- **"How are billing webhooks secured?"** Constant-time HMAC signature verification plus a timestamp
-  tolerance, so forged or replayed Stripe events are rejected.
-- **"What stops a coverage regression?"** JaCoCo fails `verify` below 80% line coverage, enforced in CI.
-- **"How do you keep dev and prod schemas in sync?"** One Flyway migration history runs on H2, CI
-  PostgreSQL, and RDS — the schema I test is the schema I ship.
-- **"What would you do next?"** Introduce the LLM behind the existing policy/budget seam, run the
-  restore drill in an AWS sandbox, and add a customer billing portal.
+> "One command runs the backend, security, contract, PostgreSQL, and coverage gates. Playwright
+> verifies the user journeys. The same Flyway migrations are used across local and PostgreSQL
+> environments."
 
-## Don't oversell
+**4:35 — Close with the roadmap (25s)**
 
-If asked what is not done, be honest: the agent is rule-based, the default public site is a
-browser-local preview, and a couple of operational drills are still pending (and labelled as such
-in the README). Honesty about scope reads as senior.
+> "The complete local request-to-work journey is working. The next launch work is production abuse
+> protection, privacy and retention controls, a real Start Free identity journey, and recorded
+> Cognito, Stripe test, and restore drills. Those gaps remain deliberately visible."
+
+## Useful answers
+
+- **Is this using AI?** The current assistant is rule-based. The repository proves the orchestration,
+  safety, evaluation, and audit seam needed before an LLM is added.
+- **Can customers submit requests publicly?** Yes. The server resolves the organization from a
+  public slug, stores requester and company metadata, returns a reference, and creates tenant-owned
+  work. Production rate limiting, bot protection, retention controls, and optional rotating portal
+  tokens are still required before broadly publishing the link.
+- **How is tenant leakage prevented?** Verified identity supplies the tenant ID, repository queries
+  require it, and automated tests cover list and direct-ID isolation.
+- **Are payments live?** Stripe Checkout and verified webhooks are implemented as a foundation.
+  Production configuration and real test-mode launch drills are still required.
+- **What stops quality regression?** Maven verification, PostgreSQL Testcontainers, Playwright, and
+  an enforced 80% line-coverage floor.
+- **What would you validate with pilots?** Intake friction, useful request categories, priority
+  accuracy, status language, and whether the recommended next action actually saves follow-up time.
+
+## Do not oversell
+
+Do not call this a launched commercial service, claim paying customers, describe the rule-based
+assistant as an LLM, or imply the default browser-local demo persists production data. Accurate
+scope makes the product and the engineering easier to trust.

@@ -1,4 +1,4 @@
-const config = window.MISSION_CONFIG ?? {};
+const config = window.REQUESTFLOW_CONFIG ?? window.MISSION_CONFIG ?? {};
 const tokenKey = 'mission-control-auth';
 const verifierKey = 'mission-control-pkce-verifier';
 const stateKey = 'mission-control-oauth-state';
@@ -15,7 +15,8 @@ async function challenge(verifier) {
 }
 
 function redirectUri() {
-  return `${location.origin}${location.pathname}`;
+  const path = location.pathname.replace(/\/$/, '');
+  return `${location.origin}${path}`;
 }
 
 export function authenticationConfigured() {
@@ -74,3 +75,4 @@ export async function initializeAuth() {
 }
 
 export function apiBaseUrl() { return (config.apiBaseUrl ?? '').replace(/\/$/, ''); }
+export function publicOrganizationSlug() { return config.publicOrganizationSlug || 'local'; }

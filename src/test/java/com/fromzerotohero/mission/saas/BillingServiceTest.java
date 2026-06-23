@@ -44,11 +44,13 @@ class BillingServiceTest {
     private MockRestServiceServer stripeServer;
     private RestClient stripe;
     private BillingSubscriptionRepository subscriptions;
+    private BillingWebhookEventRepository webhookEvents;
     private TenantOrganizationRepository organizations;
 
     @BeforeEach
     void setUp() {
         subscriptions = Mockito.mock(BillingSubscriptionRepository.class);
+        webhookEvents = Mockito.mock(BillingWebhookEventRepository.class);
         organizations = Mockito.mock(TenantOrganizationRepository.class);
         tenantContext = Mockito.mock(TenantContext.class);
         when(tenantContext.tenantId()).thenReturn(TENANT);
@@ -59,7 +61,7 @@ class BillingServiceTest {
     }
 
     private BillingService billingWith(String proPriceId, String businessPriceId) {
-        return new BillingService(subscriptions, organizations, tenantContext, new ObjectMapper(),
+        return new BillingService(subscriptions, webhookEvents, organizations, tenantContext, new ObjectMapper(),
                 stripe, "sk_test_123", "whsec_test", proPriceId, businessPriceId,
                 "https://app.example.com/", Clock.systemUTC());
     }
@@ -123,27 +125,44 @@ class BillingServiceTest {
         when(organizations.findById(TENANT)).thenReturn(Optional.of(organization));
 
         String payload = """
-                {"type":"customer.subscription.updated","data":{"object":{
+                {"id":"evt_trialing","type":"customer.subscription.updated","data":{"object":{
                   "id":"sub_x","customer":"cus_x","status":"trialing","current_period_end":1893456000}}}
                 """.trim();
+        when(webhookEvents.existsById("evt_trialing")).thenReturn(false);
         billingWith("price_pro", "price_business").processWebhook(payload, signedHeader(payload));
 
         assertThat(existing.getStatus()).isEqualTo("TRIALING");
         assertThat(existing.getPlan()).isEqualTo(Plan.PRO);
         assertThat(organization.getPlan()).isEqualTo(Plan.PRO);
+        verify(webhookEvents).save(org.mockito.ArgumentMatchers.any(BillingWebhookEvent.class));
+    }
+
+    @Test
+    void duplicateWebhookEventIsIgnored() throws Exception {
+        when(webhookEvents.existsById("evt_duplicate")).thenReturn(true);
+        String payload = """
+                {"id":"evt_duplicate","type":"checkout.session.completed","data":{"object":{
+                  "client_reference_id":"00000000-0000-0000-0000-000000000009",
+                  "customer":"cus_dup","subscription":"sub_dup","metadata":{"plan":"PRO"}}}}
+                """.trim();
+        billingWith("price_pro", "price_business").processWebhook(payload, signedHeader(payload));
+        verify(subscriptions, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(webhookEvents, never()).save(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     void unknownSubscriptionEventIsIgnored() throws Exception {
         when(subscriptions.findByStripeSubscriptionId("sub_missing")).thenReturn(Optional.empty());
+        when(webhookEvents.existsById("evt_missing")).thenReturn(false);
 
         String payload = """
-                {"type":"customer.subscription.deleted","data":{"object":{
+                {"id":"evt_missing","type":"customer.subscription.deleted","data":{"object":{
                   "id":"sub_missing","customer":"cus_missing","status":"canceled"}}}
                 """.trim();
         billingWith("price_pro", "price_business").processWebhook(payload, signedHeader(payload));
 
         verify(organizations, never()).findById(any());
+        verify(webhookEvents).save(org.mockito.ArgumentMatchers.any(BillingWebhookEvent.class));
     }
 
     private String signedHeader(String payload) throws Exception {
