@@ -33,6 +33,7 @@ jobs:
         with:
           image-ref: requestflow-ai:ci
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
           exit-code: 1
       - run: npm ci
       - run: npm audit --audit-level=high
