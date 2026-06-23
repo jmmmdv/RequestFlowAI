@@ -260,6 +260,7 @@ planning assistants are deterministic rules, not an external LLM.
 
 - [x] Add production rate limiting, bot protection, request-retention controls, and optional unguessable portal tokens
 - [x] Complete and test the production-backed Start Free onboarding journey
+- [ ] Complete hosted pilot gate — [PRODUCTION-PILOT-CHECKLIST.md](docs/saas/PRODUCTION-PILOT-CHECKLIST.md)
 - [x] Run and record Cognito signup drill — [EXTERNAL-DRILLS.md](docs/saas/EXTERNAL-DRILLS.md) and [DRILL-LOG.md](docs/saas/DRILL-LOG.md)
 - [ ] Run and record invitation transfer and Stripe test Checkout drills — [EXTERNAL-DRILLS.md](docs/saas/EXTERNAL-DRILLS.md)
 - [ ] Run and record the AWS restore drill — [RESTORE-DRILL.md](docs/operations/RESTORE-DRILL.md)

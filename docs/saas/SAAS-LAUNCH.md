@@ -80,3 +80,5 @@ Then walk through the organization overview, a rejected FREE-plan quota request,
 Stripe test Checkout, a signed webhook, and the resulting plan/usage change. Record live drill
 evidence in [DRILL-LOG.md](DRILL-LOG.md) using the step-by-step runbook in
 [EXTERNAL-DRILLS.md](EXTERNAL-DRILLS.md). Do not mark drills complete until they have actually run.
+
+For a consolidated hosted-pilot gate, use [PRODUCTION-PILOT-CHECKLIST.md](PRODUCTION-PILOT-CHECKLIST.md).
