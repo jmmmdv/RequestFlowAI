@@ -184,8 +184,22 @@ call as a paid experiment.
 | `AiBudgetService` | `src/main/java/.../ai/budget/AiBudgetService.java` | Warning (70%), hard stop (90%), `canUsePaidAi`, `manualReviewRequired` |
 | `AiBudgetStatus` | `src/main/java/.../ai/budget/AiBudgetStatus.java` | Immutable status record for callers |
 
-**Not yet wired:** intake classification, OpenAI client, usage persistence, or live spend feeds.
+**Not yet wired:** intake classification, OpenAI client, or live spend feeds into analysis paths.
 **No paid API calls** are made by this step — rule-based analysis is unchanged.
 
-**Next steps:** usage event table, per-tenant quotas, `RequestAnalysisService` facade before any
-OpenAI integration.
+**Next steps:** per-tenant quotas, `RequestAnalysisService` facade before any OpenAI integration.
+
+### Step 2 — AI usage event persistence (implemented)
+
+| Component | Location | Notes |
+|---|---|---|
+| Flyway `V9__add_ai_usage_events.sql` | `ai_usage_event` table | Tenant-scoped metadata, cost, tokens, budget snapshot |
+| `AiUsageEvent` | `src/main/java/.../ai/usage/AiUsageEvent.java` | JPA entity |
+| `AiUsageEventRepository` | `src/main/java/.../ai/usage/AiUsageEventRepository.java` | Monthly sum, tenant count, recent events |
+| `AiUsageEventService` | `src/main/java/.../ai/usage/AiUsageEventService.java` | `record()`, monthly rollups; integrates `AiBudgetService` for snapshot |
+
+**Still not wired:** `RequestIntakeService` and `AgentOrchestrator` do not call `AiUsageEventService` yet.
+**Still no OpenAI SDK, API keys, or paid API calls.**
+
+**Step 3 target:** record rule-based intake events from `RequestIntakeService.submit()` and gate future
+LLM calls through a `RequestAnalysisService` facade.
