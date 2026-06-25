@@ -2,13 +2,29 @@ package com.fromzerotohero.mission.intake;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fromzerotohero.mission.ai.provider.AiProviderProperties;
+import com.fromzerotohero.mission.ai.provider.DisabledAiRequestAnalysisProvider;
 import com.fromzerotohero.mission.ai.usage.AiAnalysisSource;
 import com.fromzerotohero.mission.workitem.Priority;
 import org.junit.jupiter.api.Test;
 
 class RequestAnalysisServiceTest {
     private final RuleBasedRequestClassifier classifier = new RuleBasedRequestClassifier();
-    private final RequestAnalysisService service = new RequestAnalysisService(classifier);
+    private final RequestAnalysisService service = new RequestAnalysisService(
+            new DisabledAiRequestAnalysisProvider(new AiProviderProperties()), classifier);
+
+    @Test
+    void fallsBackToRuleBasedWhenPaidProviderReturnsEmpty() {
+        RequestAnalysisInput input = new RequestAnalysisInput("Refund request",
+                "Please review this payment charge.", null, null);
+
+        RequestAnalysisResult result = service.analyze(input);
+
+        assertThat(result.classification()).isEqualTo(classifier.classify(
+                input.title(), input.details(), input.requestedCategory(), input.requestedUrgency()));
+        assertThat(result.analysisSource()).isEqualTo(AiAnalysisSource.RULE_BASED);
+        assertThat(result.paidAiUsed()).isFalse();
+    }
 
     @Test
     void matchesRuleBasedClassifierForUrgentSupportRequest() {

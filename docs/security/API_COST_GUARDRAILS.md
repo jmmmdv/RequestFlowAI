@@ -248,3 +248,19 @@ Usage is counted from `ai_usage_event` analysis operations (`PUBLIC_INTAKE_CLASS
 submission; idempotent replays unchanged.
 
 **Still no OpenAI SDK, API keys, or paid API calls.**
+
+### Step 6 — AI provider interface with disabled default (implemented)
+
+| Component | Location | Notes |
+|---|---|---|
+| `AiRequestAnalysisProvider` | `ai/provider/AiRequestAnalysisProvider.java` | Paid AI abstraction; returns `Optional` |
+| `DisabledAiRequestAnalysisProvider` | `ai/provider/DisabledAiRequestAnalysisProvider.java` | Default bean — always empty, no external calls |
+| `AiProviderProperties` | `ai/provider/AiProviderProperties.java` | `requestflow.ai.provider.enabled=false` (default) |
+| `RequestAnalysisService` | `intake/RequestAnalysisService.java` | Tries provider first, falls back to rules |
+
+**Default:** paid provider disabled — intake remains rule-based with zero-cost usage events unchanged.
+
+**Future:** add a real `AiRequestAnalysisProvider` behind quota/budget checks; never call OpenAI from
+the browser.
+
+**Still no OpenAI SDK, API keys, or paid API calls.**
