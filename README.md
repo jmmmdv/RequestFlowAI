@@ -267,6 +267,14 @@ planning assistants are deterministic rules, not an external LLM.
 - [x] Add pilot onboarding, support, privacy, and data-retention documentation
 - [ ] Validate the workflow with first pilot users before claiming commercial launch readiness
 
+## Business documentation
+
+Pilot validation and customer discovery before paid AI or scale:
+
+- [Pilot validation plan](docs/business/PILOT_VALIDATION_PLAN.md)
+- [Customer discovery questions](docs/business/CUSTOMER_DISCOVERY_QUESTIONS.md)
+- [Early access pilot offer](docs/business/PILOT_OFFER.md)
+
 ## Finance documentation
 
 Lean SaaS budgeting, pricing, and unit-economics planning for founder-led pilots:
