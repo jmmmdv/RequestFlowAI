@@ -60,6 +60,41 @@ until paying customers justify an increase.
 2. Serve cached or rule-based triage for intake that already has stored analysis.
 3. Record the event in usage logs for CFO review.
 
+### Spend control pipeline (five layers)
+
+These layers run in order on every AI analysis attempt:
+
+```mermaid
+flowchart TD
+  A[Incoming request] --> B[Usage tracking]
+  B --> C{Under monthly limit?}
+  C -->|yes| D{Past warning threshold?}
+  C -->|no| F[Manual fallback]
+  D -->|no| G[Call AI API]
+  D -->|yes, under hard stop| H[Log warning + call AI]
+  D -->|yes, at hard stop| F
+  G --> B
+  F --> I[Rule-based triage / cached result]
+```
+
+| Layer | What it does | MVP default | Where enforced |
+|---|---|---|---|
+| **Usage tracking** | Record per-tenant and global `estimatedCostUsd`, tokens, and analysis count for the calendar month | Log + DB row per analysis (when LLM ships) | App DB + structured logs |
+| **Monthly limit** | Global cap on estimated API spend for the current month | **USD 50** | OpenAI dashboard + app config |
+| **Warning threshold** | Operator alert before budget is exhausted; AI still allowed | **70%** (USD 35) | Log line + optional email/SNS |
+| **Hard stop** | Block **new** AI API calls; do not retry in a loop | **90%** (USD 45) | Server-side gate before provider call |
+| **Manual fallback** | Serve rule-based classification, cached analysis, or queue for founder review — intake still succeeds | `RuleBasedRequestClassifier` today | Same path as quota exhaustion |
+
+**Enforcement order:**
+
+1. **Usage tracking** — increment counters only after a successful AI call (or on estimated pre-flight for budgeting).
+2. **Monthly limit** — compare rolling month `sum(estimatedCostUsd)` to cap.
+3. **Warning threshold** — at 70%, emit `AI_BUDGET_WARNING` once per month (metadata only, no secrets).
+4. **Hard stop** — at 90%, set `aiBudgetExhausted=true` for the month; skip provider calls.
+5. **Manual fallback** — never leave the customer without triage; use rules already in production.
+
+**Today (no OpenAI in production path):** layers 1–4 are **documentation + provider dashboard** only; layer 5 (**manual fallback**) is **live** via `RuleBasedRequestClassifier` on every intake.
+
 ---
 
 ## 4. SaaS plan guardrails
