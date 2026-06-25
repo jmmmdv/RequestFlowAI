@@ -171,3 +171,21 @@ Raise the global monthly budget only when **all** are true:
 
 Until then, keep the MVP cap at **USD 50**, use rule-based triage as default, and treat every AI
 call as a paid experiment.
+
+---
+
+## Implementation status
+
+### Step 1 — Budget configuration and service (implemented)
+
+| Component | Location | Notes |
+|---|---|---|
+| `AiBudgetProperties` | `src/main/java/.../ai/budget/AiBudgetProperties.java` | `requestflow.ai.budget.*` defaults in `application.properties` |
+| `AiBudgetService` | `src/main/java/.../ai/budget/AiBudgetService.java` | Warning (70%), hard stop (90%), `canUsePaidAi`, `manualReviewRequired` |
+| `AiBudgetStatus` | `src/main/java/.../ai/budget/AiBudgetStatus.java` | Immutable status record for callers |
+
+**Not yet wired:** intake classification, OpenAI client, usage persistence, or live spend feeds.
+**No paid API calls** are made by this step — rule-based analysis is unchanged.
+
+**Next steps:** usage event table, per-tenant quotas, `RequestAnalysisService` facade before any
+OpenAI integration.
