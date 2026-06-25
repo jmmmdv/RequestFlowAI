@@ -24,7 +24,7 @@ public class RequestIntakeService {
     private final TenantOrganizationRepository organizations;
     private final RequestSubmissionRepository submissions;
     private final WorkItemRepository workItems;
-    private final RuleBasedRequestClassifier classifier;
+    private final RequestAnalysisService requestAnalysis;
     private final QuotaService quotas;
     private final TenantContext tenantContext;
     private final PublicIntakeProperties properties;
@@ -34,14 +34,14 @@ public class RequestIntakeService {
 
     public RequestIntakeService(TenantOrganizationRepository organizations,
             RequestSubmissionRepository submissions, WorkItemRepository workItems,
-            RuleBasedRequestClassifier classifier, QuotaService quotas, TenantContext tenantContext,
+            RequestAnalysisService requestAnalysis, QuotaService quotas, TenantContext tenantContext,
             PublicIntakeProperties properties, PortalTokenHasher tokenHasher,
             org.springframework.context.ApplicationEventPublisher events,
             AiUsageEventService usageEvents) {
         this.organizations = organizations;
         this.submissions = submissions;
         this.workItems = workItems;
-        this.classifier = classifier;
+        this.requestAnalysis = requestAnalysis;
         this.quotas = quotas;
         this.tenantContext = tenantContext;
         this.properties = properties;
@@ -66,7 +66,9 @@ public class RequestIntakeService {
 
         String title = normalize(request.title());
         String details = normalize(request.details());
-        var classification = classifier.classify(title, details, request.category(), request.urgency());
+        var analysis = requestAnalysis.analyze(new RequestAnalysisInput(title, details,
+                request.category(), request.urgency()));
+        var classification = analysis.classification();
         quotas.assertWorkItemCapacity(organization.getId(), 1);
         WorkItem workItem = workItems.save(new WorkItem(title, classification.internalSummary(),
                 classification.priority(), WorkStatus.BACKLOG, organization.getId()));

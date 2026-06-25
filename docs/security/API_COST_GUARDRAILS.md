@@ -230,3 +230,21 @@ Usage is counted from `ai_usage_event` analysis operations (`PUBLIC_INTAKE_CLASS
 
 **Not enforced on public intake yet** — service and limits are ready for Step 5 / future LLM gating.
 **Still no OpenAI integration or paid API calls.**
+
+### Step 5 — RequestAnalysisService facade (implemented)
+
+| Component | Location | Notes |
+|---|---|---|
+| `RequestAnalysisService` | `intake/RequestAnalysisService.java` | Single analysis entry point for public intake |
+| `RequestAnalysisInput` / `RequestAnalysisResult` | `intake/` | Thin request/response records |
+| `RequestIntakeService` | `intake/RequestIntakeService.java` | Calls facade instead of `RuleBasedRequestClassifier` directly |
+
+**Active path:** `RuleBasedRequestClassifier` only — classification output unchanged.
+
+**Future paid AI** must go through `RequestAnalysisService`, checking `AiAnalysisQuotaService`,
+`AiBudgetService`, recording via `AiUsageEventService`, and falling back to rule-based analysis.
+
+**Usage recording** remains in `RequestIntakeService` after save — one zero-cost event per new
+submission; idempotent replays unchanged.
+
+**Still no OpenAI SDK, API keys, or paid API calls.**
