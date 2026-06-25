@@ -274,6 +274,9 @@ Pilot validation and customer discovery before paid AI or scale:
 - [Pilot validation plan](docs/business/PILOT_VALIDATION_PLAN.md)
 - [Customer discovery questions](docs/business/CUSTOMER_DISCOVERY_QUESTIONS.md)
 - [Early access pilot offer](docs/business/PILOT_OFFER.md)
+- [Customer outreach messages](docs/business/CUSTOMER_OUTREACH_MESSAGES.md)
+- [Pilot target customers](docs/business/PILOT_TARGET_CUSTOMERS.md)
+- [Validation tracker template](docs/business/VALIDATION_TRACKER_TEMPLATE.md)
 
 ## Finance documentation
 
