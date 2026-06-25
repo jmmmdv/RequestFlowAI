@@ -215,3 +215,18 @@ LLM calls through a `RequestAnalysisService` facade.
 before `recordPublicIntakeClassificationSafely()` is called.
 
 **Still no OpenAI SDK, API keys, or paid API calls.** Classification logic is unchanged.
+
+### Step 4 — SaaS plan monthly AI analysis limits (implemented)
+
+| Component | Location | Notes |
+|---|---|---|
+| `Plan.monthlyAiAnalysisLimit()` | `Plan.java` | FREE 25 · PRO 1,000 · BUSINESS 10,000 |
+| `AiAnalysisQuotaService` | `ai/usage/AiAnalysisQuotaService.java` | Monthly count, quota status, `assertAiAnalysisCapacity()` |
+| `AiAnalysisQuotaStatus` | `ai/usage/AiAnalysisQuotaStatus.java` | Used/limit/under/exceeded snapshot |
+| Repository count | `AiUsageEventRepository.countMonthlyAiAnalysesByTenantSince` | Distinct `requestId` (or `id`) per month |
+
+Usage is counted from `ai_usage_event` analysis operations (`PUBLIC_INTAKE_CLASSIFICATION`,
+`REQUEST_ANALYSIS`, `AGENT_ANALYSIS`). Duplicate `requestId` rows in the same month count once.
+
+**Not enforced on public intake yet** — service and limits are ready for Step 5 / future LLM gating.
+**Still no OpenAI integration or paid API calls.**

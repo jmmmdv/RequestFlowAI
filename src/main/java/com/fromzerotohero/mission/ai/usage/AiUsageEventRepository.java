@@ -25,5 +25,15 @@ public interface AiUsageEventRepository extends JpaRepository<AiUsageEvent, UUID
 
     long countByTenantIdAndCreatedAtGreaterThanEqual(UUID tenantId, Instant since);
 
+    @Query("""
+            select count(distinct coalesce(event.requestId, event.id))
+            from AiUsageEvent event
+            where event.tenantId = :tenantId
+              and event.createdAt >= :since
+              and event.operation in :operations
+            """)
+    long countMonthlyAiAnalysesByTenantSince(@Param("tenantId") UUID tenantId, @Param("since") Instant since,
+            @Param("operations") List<AiUsageOperation> operations);
+
     List<AiUsageEvent> findTop20ByTenantIdOrderByCreatedAtDesc(UUID tenantId);
 }
