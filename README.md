@@ -279,6 +279,11 @@ Lean SaaS budgeting, pricing, and unit-economics planning for founder-led pilots
 - [Finance checklist](docs/finance/FINANCE_CHECKLIST.md)
 - [API cost guardrails](docs/security/API_COST_GUARDRAILS.md)
 
+## Architecture documentation
+
+- [ADR-001: AI cost control before paid AI integration](docs/architecture/ADR-001-AI-COST-CONTROL.md)
+- [Agentic AI extension path](docs/architecture/AGENTIC-AI.md)
+
 ## Portfolio evidence map
 
 | Area | Where it lives |

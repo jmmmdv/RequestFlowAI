@@ -264,3 +264,12 @@ submission; idempotent replays unchanged.
 the browser.
 
 **Still no OpenAI SDK, API keys, or paid API calls.**
+
+### Step 7 — Technical decision record (documented)
+
+Paid AI remains **intentionally disabled** by policy until preconditions are met.
+
+**ADR:** [ADR-001: AI Cost Control Before Paid AI Integration](../architecture/ADR-001-AI-COST-CONTROL.md)
+
+Summarizes why OpenAI is not integrated yet, required guardrails, preconditions for enablement, and
+the CFO principle for increasing API spend.
