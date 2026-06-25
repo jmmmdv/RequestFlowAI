@@ -2,9 +2,10 @@
 
 Production-minded rules for controlling OpenAI and other AI/API spend at RequestFlowAI.
 
-**Related docs:** [BUDGET.md](../finance/BUDGET.md) · [PRICING.md](../finance/PRICING.md) ·
+**Related docs:** [Implementation summary](AI_COST_CONTROL_IMPLEMENTATION_SUMMARY.md) ·
+[BUDGET.md](../finance/BUDGET.md) · [PRICING.md](../finance/PRICING.md) ·
 [UNIT_ECONOMICS.md](../finance/UNIT_ECONOMICS.md) · [FINANCE_CHECKLIST.md](../finance/FINANCE_CHECKLIST.md) ·
-[PRODUCTION-SECURITY.md](PRODUCTION-SECURITY.md)
+[ADR-001](../architecture/ADR-001-AI-COST-CONTROL.md) · [PRODUCTION-SECURITY.md](PRODUCTION-SECURITY.md)
 
 ---
 
@@ -273,3 +274,5 @@ Paid AI remains **intentionally disabled** by policy until preconditions are met
 
 Summarizes why OpenAI is not integrated yet, required guardrails, preconditions for enablement, and
 the CFO principle for increasing API spend.
+
+**Summary:** [AI cost control implementation summary](AI_COST_CONTROL_IMPLEMENTATION_SUMMARY.md)

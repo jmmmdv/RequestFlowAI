@@ -278,6 +278,7 @@ Lean SaaS budgeting, pricing, and unit-economics planning for founder-led pilots
 - [Projections](docs/finance/PROJECTIONS.md)
 - [Finance checklist](docs/finance/FINANCE_CHECKLIST.md)
 - [API cost guardrails](docs/security/API_COST_GUARDRAILS.md)
+- [AI cost control implementation summary](docs/security/AI_COST_CONTROL_IMPLEMENTATION_SUMMARY.md)
 
 ## Architecture documentation
 
