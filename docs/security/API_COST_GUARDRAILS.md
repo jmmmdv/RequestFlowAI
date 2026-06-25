@@ -203,3 +203,15 @@ call as a paid experiment.
 
 **Step 3 target:** record rule-based intake events from `RequestIntakeService.submit()` and gate future
 LLM calls through a `RequestAnalysisService` facade.
+
+### Step 3 — Rule-based intake usage recording (implemented)
+
+| Component | Location | Notes |
+|---|---|---|
+| `recordPublicIntakeClassificationSafely()` | `AiUsageEventService` | Called from `RequestIntakeService.submit()` after save; failures logged, never block intake |
+| `V10__extend_ai_usage_event_enums.sql` | Flyway | Adds `PUBLIC_INTAKE_CLASSIFICATION` and `NOT_PAID_AI` |
+
+**Idempotency:** usage events are recorded only on the new-submission path — idempotent replays return
+before `recordPublicIntakeClassificationSafely()` is called.
+
+**Still no OpenAI SDK, API keys, or paid API calls.** Classification logic is unchanged.

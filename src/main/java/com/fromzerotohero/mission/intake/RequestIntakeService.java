@@ -1,5 +1,6 @@
 package com.fromzerotohero.mission.intake;
 
+import com.fromzerotohero.mission.ai.usage.AiUsageEventService;
 import com.fromzerotohero.mission.saas.QuotaService;
 import com.fromzerotohero.mission.saas.SaasException;
 import com.fromzerotohero.mission.saas.TenantOrganization;
@@ -29,12 +30,14 @@ public class RequestIntakeService {
     private final PublicIntakeProperties properties;
     private final PortalTokenHasher tokenHasher;
     private final org.springframework.context.ApplicationEventPublisher events;
+    private final AiUsageEventService usageEvents;
 
     public RequestIntakeService(TenantOrganizationRepository organizations,
             RequestSubmissionRepository submissions, WorkItemRepository workItems,
             RuleBasedRequestClassifier classifier, QuotaService quotas, TenantContext tenantContext,
             PublicIntakeProperties properties, PortalTokenHasher tokenHasher,
-            org.springframework.context.ApplicationEventPublisher events) {
+            org.springframework.context.ApplicationEventPublisher events,
+            AiUsageEventService usageEvents) {
         this.organizations = organizations;
         this.submissions = submissions;
         this.workItems = workItems;
@@ -44,6 +47,7 @@ public class RequestIntakeService {
         this.properties = properties;
         this.tokenHasher = tokenHasher;
         this.events = events;
+        this.usageEvents = usageEvents;
     }
 
     @Transactional(readOnly = true)
@@ -70,10 +74,12 @@ public class RequestIntakeService {
                 idempotencyKey, normalize(request.requesterName()), request.requesterEmail().trim().toLowerCase(Locale.ROOT),
                 normalize(request.companyName()), title, details, request.category(), request.urgency(),
                 classification, workItem.getId()));
-        events.publishEvent(new NewPublicRequestEvent(organization.getId(), organization.getName(),
-                submission.getId(), submission.getReferenceNumber(), submission.getRequesterName(),
+        events.publishEvent(new NewPublicRequestEvent(organization.getId(), organization.getSlug(),
+                organization.getName(), submission.getId(), submission.getReferenceNumber(), submission.getRequesterName(),
                 submission.getRequesterEmail(), submission.getCompanyName(), submission.getTitle(),
                 submission.getCategory(), submission.getSuggestedPriority()));
+        usageEvents.recordPublicIntakeClassificationSafely(organization.getId(), organization.getSlug(),
+                submission.getId());
         return receipt(submission, false);
     }
 

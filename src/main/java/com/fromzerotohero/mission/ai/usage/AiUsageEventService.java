@@ -10,12 +10,15 @@ import java.time.ZoneOffset;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AiUsageEventService {
+    private static final Logger log = LoggerFactory.getLogger(AiUsageEventService.class);
     private static final int COST_SCALE = 6;
     private static final RoundingMode COST_ROUNDING = RoundingMode.HALF_UP;
 
@@ -37,13 +40,25 @@ public class AiUsageEventService {
     @Transactional
     public AiUsageEvent record(RecordAiUsageEventRequest request) {
         BigDecimal estimatedCostUsd = resolveEstimatedCostUsd(request);
-        AiBudgetStatus budgetStatus = budgetService.getBudgetStatus(sumCurrentMonthEstimatedCostUsd());
+        AiRecordedBudgetStatus budgetStatus = request.budgetStatusOverride() != null
+                ? request.budgetStatusOverride()
+                : recordedBudgetStatus(budgetService.getBudgetStatus(sumCurrentMonthEstimatedCostUsd()));
         AiUsageEvent event = new AiUsageEvent(request.tenantId(), request.organizationSlug(),
                 request.requestId(), request.agentRunId(), request.operation(), request.analysisSource(),
                 request.modelName(), request.estimatedInputTokens(), request.estimatedOutputTokens(),
-                estimatedCostUsd, recordedBudgetStatus(budgetStatus), request.paidAiUsed(),
-                request.fallbackUsed());
+                estimatedCostUsd, budgetStatus, request.paidAiUsed(), request.fallbackUsed());
         return events.save(event);
+    }
+
+    public void recordPublicIntakeClassificationSafely(UUID tenantId, String organizationSlug, UUID requestId) {
+        try {
+            record(new RecordAiUsageEventRequest(tenantId, organizationSlug, requestId, null,
+                    AiUsageOperation.PUBLIC_INTAKE_CLASSIFICATION, AiAnalysisSource.RULE_BASED, "RULE_BASED",
+                    0, 0, BigDecimal.ZERO, false, false, AiRecordedBudgetStatus.NOT_PAID_AI));
+        } catch (Exception exception) {
+            log.warn("AI_USAGE_EVENT skipped for public intake tenantId={} requestId={}: {}",
+                    tenantId, requestId, exception.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)

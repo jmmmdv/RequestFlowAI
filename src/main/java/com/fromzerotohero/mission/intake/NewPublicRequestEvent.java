@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record NewPublicRequestEvent(
         UUID tenantId,
+        String organizationSlug,
         String organizationName,
         UUID requestId,
         String referenceNumber,

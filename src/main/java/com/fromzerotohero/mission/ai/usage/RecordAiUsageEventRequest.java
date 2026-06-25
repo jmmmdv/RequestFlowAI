@@ -15,4 +15,5 @@ public record RecordAiUsageEventRequest(
         Integer estimatedOutputTokens,
         BigDecimal estimatedCostUsd,
         boolean paidAiUsed,
-        boolean fallbackUsed) {}
+        boolean fallbackUsed,
+        AiRecordedBudgetStatus budgetStatusOverride) {}

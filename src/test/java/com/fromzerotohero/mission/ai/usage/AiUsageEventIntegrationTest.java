@@ -38,7 +38,7 @@ class AiUsageEventIntegrationTest {
         AiUsageEvent event = usageEvents.record(new RecordAiUsageEventRequest(
                 TENANT, "local", null, null, AiUsageOperation.REQUEST_ANALYSIS,
                 AiAnalysisSource.RULE_BASED, null, null, null, new BigDecimal("1.250000"),
-                false, false));
+                false, false, null));
 
         assertThat(event.getEstimatedCostUsd()).isEqualByComparingTo("0.000000");
         assertThat(usageEvents.sumCurrentMonthEstimatedCostUsd()).isEqualByComparingTo("0.000000");
@@ -50,11 +50,11 @@ class AiUsageEventIntegrationTest {
         usageEvents.record(new RecordAiUsageEventRequest(
                 TENANT, "local", null, null, AiUsageOperation.REQUEST_ANALYSIS,
                 AiAnalysisSource.LLM, "gpt-4o-mini", 120, 40, new BigDecimal("0.015000"),
-                true, false));
+                true, false, null));
         usageEvents.record(new RecordAiUsageEventRequest(
                 TENANT, "local", null, null, AiUsageOperation.AGENT_ANALYSIS,
                 AiAnalysisSource.LLM, "gpt-4o-mini", 80, 20, new BigDecimal("0.010000"),
-                true, false));
+                true, false, null));
 
         assertThat(usageEvents.sumCurrentMonthEstimatedCostUsd()).isEqualByComparingTo("0.025000");
         assertThat(usageEvents.sumCurrentMonthEstimatedCostUsd(TENANT)).isEqualByComparingTo("0.025000");
@@ -67,7 +67,7 @@ class AiUsageEventIntegrationTest {
         AiUsageEvent event = usageEvents.record(new RecordAiUsageEventRequest(
                 TENANT, "local", null, null, AiUsageOperation.REQUEST_ANALYSIS,
                 AiAnalysisSource.FALLBACK, null, null, null, new BigDecimal("0.500000"),
-                false, true));
+                false, true, null));
 
         assertThat(event.isFallbackUsed()).isTrue();
         assertThat(event.getEstimatedCostUsd()).isEqualByComparingTo("0.000000");
@@ -77,6 +77,6 @@ class AiUsageEventIntegrationTest {
     private RecordAiUsageEventRequest ruleBasedRequest(String slug, UUID requestId) {
         return new RecordAiUsageEventRequest(TENANT, slug, requestId, null,
                 AiUsageOperation.REQUEST_ANALYSIS, AiAnalysisSource.RULE_BASED, null,
-                null, null, BigDecimal.ZERO, false, false);
+                null, null, BigDecimal.ZERO, false, false, null);
     }
 }

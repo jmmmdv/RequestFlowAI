@@ -8,6 +8,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fromzerotohero.mission.agent.AgentRunRepository;
+import com.fromzerotohero.mission.ai.usage.AiAnalysisSource;
+import com.fromzerotohero.mission.ai.usage.AiRecordedBudgetStatus;
+import com.fromzerotohero.mission.ai.usage.AiUsageEventRepository;
+import com.fromzerotohero.mission.ai.usage.AiUsageOperation;
 import com.fromzerotohero.mission.saas.Plan;
 import com.fromzerotohero.mission.saas.TenantOrganizationRepository;
 import com.fromzerotohero.mission.workitem.WorkItemRepository;
@@ -30,9 +34,11 @@ class PublicRequestIntakeIntegrationTest {
     @Autowired WorkItemRepository workItems;
     @Autowired AgentRunRepository agentRuns;
     @Autowired TenantOrganizationRepository organizations;
+    @Autowired AiUsageEventRepository usageEvents;
 
     @BeforeEach
     void cleanState() {
+        usageEvents.deleteAll();
         submissions.deleteAll();
         agentRuns.deleteAll();
         workItems.deleteAll();
@@ -87,6 +93,18 @@ class PublicRequestIntakeIntegrationTest {
                 });
         assertThat(workItems.findAllByTenantIdOrderByUpdatedAtDesc(TENANT)).singleElement()
                 .satisfies(item -> assertThat(item.getTitle()).isEqualTo("Booking form is down"));
+        assertThat(usageEvents.findAll()).singleElement().satisfies(event -> {
+            assertThat(event.getTenantId()).isEqualTo(TENANT);
+            assertThat(event.getOrganizationSlug()).isEqualTo("local");
+            assertThat(event.getOperation()).isEqualTo(AiUsageOperation.PUBLIC_INTAKE_CLASSIFICATION);
+            assertThat(event.getAnalysisSource()).isEqualTo(AiAnalysisSource.RULE_BASED);
+            assertThat(event.getModelName()).isEqualTo("RULE_BASED");
+            assertThat(event.getEstimatedCostUsd()).isEqualByComparingTo("0.000000");
+            assertThat(event.getBudgetStatus()).isEqualTo(AiRecordedBudgetStatus.NOT_PAID_AI);
+            assertThat(event.isPaidAiUsed()).isFalse();
+            assertThat(event.isFallbackUsed()).isFalse();
+            assertThat(event.getRequestId()).isNotNull();
+        });
     }
 
     @Test
@@ -104,6 +122,7 @@ class PublicRequestIntakeIntegrationTest {
 
         assertThat(submissions.count()).isOne();
         assertThat(workItems.countByTenantId(TENANT)).isOne();
+        assertThat(usageEvents.count()).isOne();
     }
 
     @Test
