@@ -277,6 +277,7 @@ Lean SaaS budgeting, pricing, and unit-economics planning for founder-led pilots
 - [Unit economics](docs/finance/UNIT_ECONOMICS.md)
 - [Projections](docs/finance/PROJECTIONS.md)
 - [Finance checklist](docs/finance/FINANCE_CHECKLIST.md)
+- [API cost guardrails](docs/security/API_COST_GUARDRAILS.md)
 
 ## Portfolio evidence map
 
