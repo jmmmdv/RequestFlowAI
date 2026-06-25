@@ -267,6 +267,17 @@ planning assistants are deterministic rules, not an external LLM.
 - [x] Add pilot onboarding, support, privacy, and data-retention documentation
 - [ ] Validate the workflow with first pilot users before claiming commercial launch readiness
 
+## Finance documentation
+
+Lean SaaS budgeting, pricing, and unit-economics planning for founder-led pilots:
+
+- [Finance strategy](docs/finance/FINANCE_STRATEGY.md)
+- [Startup budget](docs/finance/BUDGET.md)
+- [Pricing plans](docs/finance/PRICING.md)
+- [Unit economics](docs/finance/UNIT_ECONOMICS.md)
+- [Projections](docs/finance/PROJECTIONS.md)
+- [Finance checklist](docs/finance/FINANCE_CHECKLIST.md)
+
 ## Portfolio evidence map
 
 | Area | Where it lives |
