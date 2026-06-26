@@ -7,7 +7,7 @@ Parameters:
     Description: Immutable ECR image URI including tag or digest
   FrontendUrl:
     Type: String
-    Default: https://from-zero-to-hero-azure.vercel.app
+    Default: https://request-flow-ai-steel.vercel.app
     Description: HTTPS browser origin and Cognito callback URL
     AllowedPattern: '^https://.+'
   CognitoDomainPrefix:

@@ -45,6 +45,97 @@ With all identity values present, the UI displays sign-in/sign-out and calls the
 access token. Without them, a `.vercel.app` deployment intentionally becomes the labeled local-data
 pilot demo. Add `?demo` to force demo mode while diagnosing production identity.
 
+**Redeploy required:** Vercel bakes `config.js` at build time via `scripts/generate-runtime-config.mjs`.
+After adding or changing any `REQUESTFLOW_*` variable, trigger a new Production deployment before
+testing sign-in again.
+
+### Cognito `redirect_mismatch` troubleshooting
+
+Cognito returns `error=redirect_mismatch` when the `redirect_uri` sent by the browser does not
+**exactly** match an entry in **Allowed callback URLs** for the **same app client** whose
+`client_id` appears in the authorize request.
+
+#### How the browser builds `redirect_uri`
+
+`src/main/resources/static/auth.js` derives it from the current page (not from Vercel env vars):
+
+```javascript
+function redirectUri() {
+  const path = location.pathname.replace(/\/$/, '');
+  return `${location.origin}${path}`;
+}
+```
+
+| Page you open | `redirect_uri` sent to Cognito |
+|---|---|
+| `https://request-flow-ai-steel.vercel.app` | `https://request-flow-ai-steel.vercel.app` |
+| `https://request-flow-ai-steel.vercel.app/` | `https://request-flow-ai-steel.vercel.app` |
+| `http://localhost:8080/` | `http://localhost:8080` |
+| `http://localhost:8080/index.html` | `http://localhost:8080/index.html` |
+
+Hash fragments (`#workspace`) and query strings are not included. Logout uses the same value as
+`logout_uri`.
+
+#### Three places that must agree
+
+1. **Browser origin** — the HTTPS host in the address bar when you click **Sign in** (production
+   Vercel URL, not a preview deployment, unless that preview URL is registered in Cognito).
+2. **Cognito app client** (`mission-control-browser`) — **Allowed callback URLs** and **Allowed
+   sign-out URLs** must include the exact `redirect_uri` / `logout_uri` strings above (both with
+   and without trailing slash for the site root).
+3. **Vercel runtime config** — `REQUESTFLOW_COGNITO_DOMAIN` and `REQUESTFLOW_COGNITO_CLIENT_ID`
+   in `config.js` must belong to that same user pool and app client. A stale or wrong client ID
+   sends you to a client whose callback list does not include your Vercel host.
+
+There is no `REQUESTFLOW_FRONTEND_URL` variable. The frontend URL is implied by where the static
+site is hosted; CloudFormation tracks it as the `FrontendUrl` parameter.
+
+#### Where to read the correct public values in AWS
+
+```bash
+aws cloudformation describe-stacks --stack-name automation-mission-control --region us-east-1 \
+  --query "Stacks[0].Outputs[?OutputKey=='CognitoClientId'||OutputKey=='CognitoManagedLoginDomain'||OutputKey=='ServiceUrl']" \
+  --output table
+```
+
+Also confirm the stack parameter `FrontendUrl` matches your live Vercel hostname:
+
+```bash
+aws cloudformation describe-stacks --stack-name automation-mission-control --region us-east-1 \
+  --query "Stacks[0].Parameters[?ParameterKey=='FrontendUrl'].ParameterValue" --output text
+```
+
+In the AWS Console: **Cognito → User pools → automation-mission-control → App integration →
+App clients → mission-control-browser → Login pages → Allowed callback URLs**.
+
+Compare live Vercel output (public, safe to curl):
+
+```bash
+curl -s https://YOUR-VERCEL-HOST/config.js
+```
+
+`cognitoDomain`, `clientId`, and `apiBaseUrl` must match the stack outputs. Redeploy Vercel after
+any env change.
+
+#### Common causes
+
+| Symptom | Likely cause |
+|---|---|
+| `redirect_mismatch` on production Vercel | `FrontendUrl` / Cognito callbacks still list an old hostname (for example a previous `*.vercel.app` project) |
+| Mismatch only on preview deploys | Preview URL not in Cognito callback list |
+| Mismatch only on localhost | `http://localhost:8080` not added to Cognito (CloudFormation only registers HTTPS `FrontendUrl`) |
+| Mismatch after env change | Vercel not redeployed; browser still serving old `config.js` from a previous build |
+| Wrong pool / client | `REQUESTFLOW_COGNITO_CLIENT_ID` points at a different app client than the one you edited |
+
+#### Verification after a fix
+
+1. Open `https://YOUR-VERCEL-HOST/config.js` — confirm `clientId` and `cognitoDomain`.
+2. Open the site root, click **Sign in**, and inspect the authorize URL for `redirect_uri` and
+   `client_id`.
+3. Confirm both values match Cognito **mission-control-browser** settings.
+4. Complete login; the dashboard should show **Authenticated with Cognito** (not demo mode).
+5. Optional API check: `curl -fsS https://YOUR-APP-RUNNER-HOST/actuator/health`
+
 The shareable page is `/public-request.html?organization={organizationSlug}`. Public intake uses
 `/api/public/intake/{organizationSlug}` and never accepts a tenant UUID from the browser. The slug
 is a public lookup key rather than a secret; only an active organization resolves, and all writes

@@ -65,6 +65,23 @@ vercel env add REQUESTFLOW_PUBLIC_ORGANIZATION_SLUG production
 These are public browser configuration values, not secrets. The original `MISSION_*` aliases remain
 supported for existing deployments. Redeploy Vercel after adding or changing them.
 
+Map stack outputs to Vercel variables:
+
+| CloudFormation output | Vercel env var | Example shape |
+|---|---|---|
+| `ServiceUrl` | `REQUESTFLOW_API_BASE_URL` | `https://HOST.awsapprunner.com` |
+| `CognitoManagedLoginDomain` | `REQUESTFLOW_COGNITO_DOMAIN` | `https://PREFIX.auth.REGION.amazoncognito.com` |
+| `CognitoClientId` | `REQUESTFLOW_COGNITO_CLIENT_ID` | public OAuth client ID |
+| (your org slug) | `REQUESTFLOW_PUBLIC_ORGANIZATION_SLUG` | e.g. `local` |
+
+The `FrontendUrl` deploy parameter must be the **exact** HTTPS origin users open in the browser
+(for example `https://your-project.vercel.app`). CloudFormation registers that origin (with and
+without a trailing slash) on the `mission-control-browser` Cognito app client. If you change Vercel
+projects or hostnames, update `FrontendUrl` and redeploy the stack, then confirm Vercel
+`REQUESTFLOW_*` values still match stack outputs.
+
+For `redirect_mismatch` diagnosis, see [SaaS launch guide — Cognito troubleshooting](../../docs/saas/SAAS-LAUNCH.md#cognito-redirect_mismatch-troubleshooting).
+
 ## Optional Stripe test billing
 
 Create recurring PRO and BUSINESS prices in Stripe test mode. Store the test secret key and webhook

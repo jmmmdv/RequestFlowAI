@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 STACK_NAME="${STACK_NAME:-automation-mission-control}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
-FRONTEND_URL="${FRONTEND_URL:-https://from-zero-to-hero-azure.vercel.app}"
+FRONTEND_URL="${FRONTEND_URL:-https://request-flow-ai-steel.vercel.app}"
 COGNITO_PREFIX="${COGNITO_PREFIX:-jeyhun-requestflow-2026}"
 ALARM_EMAIL="${ALARM_EMAIL:-j.mmmdv@gmail.com}"
 
