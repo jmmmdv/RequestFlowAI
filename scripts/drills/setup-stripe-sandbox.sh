@@ -24,13 +24,13 @@ Usage:
   ./scripts/drills/setup-stripe-sandbox.sh
 
 Optional:
-  FRONTEND_URL=https://from-zero-to-hero-azure.vercel.app
+  FRONTEND_URL=https://request-flow-ai-steel.vercel.app
   COGNITO_PREFIX=jeyhun-requestflow-2026
   ALARM_EMAIL=you@example.com
 EOF
 }
 
-FRONTEND_URL="${FRONTEND_URL:-https://from-zero-to-hero-azure.vercel.app}"
+FRONTEND_URL="${FRONTEND_URL:-https://request-flow-ai-steel.vercel.app}"
 COGNITO_PREFIX="${COGNITO_PREFIX:-jeyhun-requestflow-2026}"
 ALARM_EMAIL="${ALARM_EMAIL:-j.mmmdv@gmail.com}"
 

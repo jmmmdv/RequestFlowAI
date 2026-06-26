@@ -46,7 +46,7 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides \
     ImageRepository="$IMAGE_URI" \
-    FrontendUrl="https://YOUR-PROJECT.vercel.app" \
+    FrontendUrl="https://request-flow-ai-steel.vercel.app" \
     CognitoDomainPrefix="YOUR-GLOBALLY-UNIQUE-PREFIX" \
     AlarmEmail="YOUR-EMAIL@example.com"
 ```
@@ -74,11 +74,11 @@ Map stack outputs to Vercel variables:
 | `CognitoClientId` | `REQUESTFLOW_COGNITO_CLIENT_ID` | public OAuth client ID |
 | (your org slug) | `REQUESTFLOW_PUBLIC_ORGANIZATION_SLUG` | e.g. `local` |
 
-The `FrontendUrl` deploy parameter must be the **exact** HTTPS origin users open in the browser
-(for example `https://your-project.vercel.app`). CloudFormation registers that origin (with and
-without a trailing slash) on the `mission-control-browser` Cognito app client. If you change Vercel
-projects or hostnames, update `FrontendUrl` and redeploy the stack, then confirm Vercel
-`REQUESTFLOW_*` values still match stack outputs.
+The `FrontendUrl` deploy parameter must be the **exact** HTTPS origin users open in the browser.
+The current production frontend is `https://request-flow-ai-steel.vercel.app`. CloudFormation
+registers that origin (with and without a trailing slash) on the `mission-control-browser` Cognito app
+client. If you change Vercel projects or hostnames, update `FrontendUrl` and redeploy the stack, then
+confirm Vercel `REQUESTFLOW_*` values still match stack outputs.
 
 For `redirect_mismatch` diagnosis, see [SaaS launch guide — Cognito troubleshooting](../../docs/saas/SAAS-LAUNCH.md#cognito-redirect_mismatch-troubleshooting).
 

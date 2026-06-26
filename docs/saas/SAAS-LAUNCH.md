@@ -55,6 +55,13 @@ Cognito returns `error=redirect_mismatch` when the `redirect_uri` sent by the br
 **exactly** match an entry in **Allowed callback URLs** for the **same app client** whose
 `client_id` appears in the authorize request.
 
+**Current production frontend (register both in Cognito):**
+
+```text
+https://request-flow-ai-steel.vercel.app
+https://request-flow-ai-steel.vercel.app/
+```
+
 #### How the browser builds `redirect_uri`
 
 `src/main/resources/static/auth.js` derives it from the current page (not from Vercel env vars):
@@ -111,7 +118,7 @@ App clients → mission-control-browser → Login pages → Allowed callback URL
 Compare live Vercel output (public, safe to curl):
 
 ```bash
-curl -s https://YOUR-VERCEL-HOST/config.js
+curl -s https://request-flow-ai-steel.vercel.app/config.js
 ```
 
 `cognitoDomain`, `clientId`, and `apiBaseUrl` must match the stack outputs. Redeploy Vercel after
@@ -129,8 +136,8 @@ any env change.
 
 #### Verification after a fix
 
-1. Open `https://YOUR-VERCEL-HOST/config.js` — confirm `clientId` and `cognitoDomain`.
-2. Open the site root, click **Sign in**, and inspect the authorize URL for `redirect_uri` and
+1. Open `https://request-flow-ai-steel.vercel.app/config.js` — confirm `clientId` and `cognitoDomain`.
+2. Open `https://request-flow-ai-steel.vercel.app/`, click **Sign in**, and inspect the authorize URL for `redirect_uri` and
    `client_id`.
 3. Confirm both values match Cognito **mission-control-browser** settings.
 4. Complete login; the dashboard should show **Authenticated with Cognito** (not demo mode).

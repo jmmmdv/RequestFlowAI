@@ -36,7 +36,7 @@ done
 SERVICE_URL="$(aws cloudformation describe-stacks --stack-name "$STACK" --region "$REGION" \
   --query "Stacks[0].Outputs[?OutputKey=='ServiceUrl'].OutputValue" --output text)"
 API_BASE="https://${SERVICE_URL}"
-FRONTEND_URL="${FRONTEND_URL:-https://from-zero-to-hero-azure.vercel.app}"
+FRONTEND_URL="${FRONTEND_URL:-https://request-flow-ai-steel.vercel.app}"
 
 echo "==> RequestFlow AI Stripe checkout drill"
 echo "    API:      $API_BASE"

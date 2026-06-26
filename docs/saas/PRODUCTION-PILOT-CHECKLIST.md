@@ -65,7 +65,7 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides \
     ImageRepository="$IMAGE_URI" \
-    FrontendUrl="https://YOUR-VERCEL-HOST.vercel.app" \
+    FrontendUrl="https://request-flow-ai-steel.vercel.app" \
     CognitoDomainPrefix="YOUR-GLOBALLY-UNIQUE-PREFIX" \
     AlarmEmail="YOUR-OPS-EMAIL@example.com"
 ```
@@ -73,7 +73,7 @@ aws cloudformation deploy \
 Post-deploy helper (waits for stack, redeploys Cognito trigger):
 
 ```bash
-FRONTEND_URL="https://YOUR-VERCEL-HOST.vercel.app" \
+FRONTEND_URL="https://request-flow-ai-steel.vercel.app" \
 COGNITO_PREFIX="YOUR-GLOBALLY-UNIQUE-PREFIX" \
 ALARM_EMAIL="YOUR-OPS-EMAIL@example.com" \
 ./scripts/drills/post-deploy-setup.sh
@@ -284,9 +284,9 @@ Legacy aliases `MISSION_*` still work for existing deployments.
 |---|---|---|---|
 | **API** | App Runner default URL | ☐ | `*.awsapprunner.com` — HTTPS included |
 | **API** | Custom API domain (optional) | ☐ | Route 53 + App Runner custom domain |
-| **Frontend** | Vercel HTTPS | ☐ | `*.vercel.app` or custom domain |
+| **Frontend** | Vercel HTTPS | ☐ | `https://request-flow-ai-steel.vercel.app` |
 | **Frontend** | `FRONTEND_URL` matches live URL | ☐ | Must match exactly for CORS |
-| **Cognito** | Callback URLs include frontend origin | ☐ | Template uses `FrontendUrl` parameter |
+| **Cognito** | Callback URLs include frontend origin | ☐ | `https://request-flow-ai-steel.vercel.app` and trailing-slash variant |
 | **Stripe** | Webhook endpoint uses HTTPS App Runner URL | ☐ | |
 
 ---
@@ -356,7 +356,7 @@ curl -sS -H "Authorization: Bearer $ACCESS_TOKEN" \
 
 ### Pricing UI (browser)
 
-1. Open `https://YOUR-VERCEL-HOST` — confirm **$0 / $49 / $99** pricing and FAQ.
+1. Open `https://request-flow-ai-steel.vercel.app` — confirm **$0 / $49 / $99** pricing and FAQ.
 2. Sign in → confirm **Upgrade to Pro — $49/mo** visible on FREE plan.
 3. Complete founder setup → copy public portal link → submit test request.
 4. Confirm request appears in inbox; check email or CloudWatch for `INTAKE_NOTIFICATION`.

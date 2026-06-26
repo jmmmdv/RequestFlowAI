@@ -3,7 +3,7 @@
 Copy-paste messages for the first RequestFlow AI pilot customers. Keep claims honest: pilot-ready
 demo, rule-based triage, not a launched commercial product.
 
-**Live demo:** https://from-zero-to-hero-azure.vercel.app  
+**Live demo:** https://request-flow-ai-steel.vercel.app  
 **Code:** https://github.com/jmmmdv/RequestFlowAI
 
 ## Who to contact first
@@ -31,7 +31,7 @@ looking for 3–5 teams to try it free and tell me what breaks.
 Would a 20-minute walkthrough next week be useful?
 
 — Jeyhun  
-Demo: https://from-zero-to-hero-azure.vercel.app
+Demo: https://request-flow-ai-steel.vercel.app
 
 ## LinkedIn DM (shorter)
 
