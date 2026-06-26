@@ -7,7 +7,7 @@
 **Stack:** Java 21, Spring Boot 3.5, PostgreSQL, Playwright, AWS, Stripe ·
 **Status:** working foundation and pilot-ready demo; not yet a launched commercial product.
 
-- Live demo: https://from-zero-to-hero-azure.vercel.app
+- Live demo: https://request-flow-ai-steel.vercel.app
 - Source: https://github.com/jmmmdv/RequestFlowAI
 - Investor one-pager: [INVESTOR-ONE-PAGER.md](INVESTOR-ONE-PAGER.md)
 - API docs: `/swagger-ui.html` on the running service
