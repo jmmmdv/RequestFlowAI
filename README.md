@@ -278,6 +278,14 @@ Pilot validation and customer discovery before paid AI or scale:
 - [Pilot target customers](docs/business/PILOT_TARGET_CUSTOMERS.md)
 - [Validation tracker template](docs/business/VALIDATION_TRACKER_TEMPLATE.md)
 
+Real estate pilot demo pack:
+
+- [Real estate pilot notes](docs/business/REAL_ESTATE_PILOT_NOTES.md)
+- [Real estate discovery questions](docs/business/REAL_ESTATE_DISCOVERY_QUESTIONS.md)
+- [Real estate demo script](docs/business/REAL_ESTATE_DEMO_SCRIPT.md)
+- [Real estate sample requests](docs/business/REAL_ESTATE_SAMPLE_REQUESTS.md)
+- [Real estate pilot offer](docs/business/REAL_ESTATE_PILOT_OFFER.md)
+
 ## Finance documentation
 
 Lean SaaS budgeting, pricing, and unit-economics planning for founder-led pilots:
