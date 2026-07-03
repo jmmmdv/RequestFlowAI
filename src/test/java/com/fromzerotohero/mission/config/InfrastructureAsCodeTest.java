@@ -10,7 +10,7 @@ class InfrastructureAsCodeTest {
     private static final Path AWS_TEMPLATE = Path.of("infrastructure/aws/template.yaml");
 
     @Test
-    void productionTemplateKeepsPostgreSqlPrivateRecoverableAndSecretBacked() throws Exception {
+    void legacyAwsTemplateKeepsPostgreSqlPrivateRecoverableAndSecretBacked() throws Exception {
         String template = Files.readString(AWS_TEMPLATE);
 
         assertThat(template)
@@ -25,7 +25,7 @@ class InfrastructureAsCodeTest {
     }
 
     @Test
-    void productionTemplateProvidesNetworkAndOperationalEvidence() throws Exception {
+    void legacyAwsTemplateProvidesNetworkAndOperationalEvidence() throws Exception {
         String template = Files.readString(AWS_TEMPLATE);
 
         assertThat(template)
@@ -38,7 +38,7 @@ class InfrastructureAsCodeTest {
     }
 
     @Test
-    void productionTemplateProvisionsBrowserIdentityAndBillingSecrets() throws Exception {
+    void legacyAwsTemplateProvisionsBrowserIdentityAndBillingSecrets() throws Exception {
         String template = Files.readString(AWS_TEMPLATE);
         assertThat(template)
                 .contains("Type: AWS::Cognito::UserPool")
@@ -70,7 +70,7 @@ class InfrastructureAsCodeTest {
     }
 
     @Test
-    void productionTemplateSyncsCognitoOnInvitationAccept() throws Exception {
+    void legacyAwsTemplateSyncsCognitoOnInvitationAccept() throws Exception {
         String template = Files.readString(AWS_TEMPLATE);
         assertThat(template)
                 .contains("COGNITO_USER_POOL_ID")
@@ -89,5 +89,8 @@ class InfrastructureAsCodeTest {
                 .contains("location.hostname.endsWith('.vercel.app')")
                 .contains("requestflow-ai-demo-v1")
                 .contains("legacyDemoStateKey");
+        assertThat(Files.readString(Path.of("scripts/generate-runtime-config.mjs")))
+                .contains("REQUESTFLOW_AUTH_MODE")
+                .contains("REQUESTFLOW_API_BASE_URL");
     }
 }

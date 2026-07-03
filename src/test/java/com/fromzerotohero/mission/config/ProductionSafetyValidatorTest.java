@@ -9,7 +9,7 @@ class ProductionSafetyValidatorTest {
     @Test
     void rejectsPostgreSqlWithoutSecurity() {
         ProductionSafetyValidator validator = new ProductionSafetyValidator(
-                "jdbc:postgresql://db.internal:5432/mission_control", false, true);
+                "jdbc:postgresql://db.internal:5432/mission_control", false, true, "oauth2", "");
 
         assertThatThrownBy(validator::validate)
                 .isInstanceOf(IllegalStateException.class)
@@ -20,7 +20,7 @@ class ProductionSafetyValidatorTest {
     @Test
     void allowsPostgreSqlWhenSecurityEnabled() {
         ProductionSafetyValidator validator = new ProductionSafetyValidator(
-                "jdbc:postgresql://db.internal:5432/mission_control", true, true);
+                "jdbc:postgresql://db.internal:5432/mission_control", true, true, "oauth2", "");
 
         assertThatCode(validator::validate).doesNotThrowAnyException();
     }
@@ -28,7 +28,7 @@ class ProductionSafetyValidatorTest {
     @Test
     void allowsH2WithoutSecurity() {
         ProductionSafetyValidator validator = new ProductionSafetyValidator(
-                "jdbc:h2:mem:requestflow", false, true);
+                "jdbc:h2:mem:requestflow", false, true, "basic", "");
 
         assertThatCode(validator::validate).doesNotThrowAnyException();
     }
@@ -36,7 +36,26 @@ class ProductionSafetyValidatorTest {
     @Test
     void canBeDisabledForIntegrationTests() {
         ProductionSafetyValidator validator = new ProductionSafetyValidator(
-                "jdbc:postgresql://localhost:5432/test", false, false);
+                "jdbc:postgresql://localhost:5432/test", false, false, "basic", "");
+
+        assertThatCode(validator::validate).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsPostgreSqlBasicAuthWithoutPasswordHash() {
+        ProductionSafetyValidator validator = new ProductionSafetyValidator(
+                "jdbc:postgresql://db.internal:5432/requestflow", true, true, "basic", "");
+
+        assertThatThrownBy(validator::validate)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ADMIN_PASSWORD_HASH");
+    }
+
+    @Test
+    void allowsPostgreSqlBasicAuthWithPasswordHash() {
+        ProductionSafetyValidator validator = new ProductionSafetyValidator(
+                "jdbc:postgresql://db.internal:5432/requestflow", true, true,
+                "basic", "{bcrypt}$2a$10$012345678901234567890u1QJZkD9fZxTQf77NOZpQd6twxFz9t2K");
 
         assertThatCode(validator::validate).doesNotThrowAnyException();
     }

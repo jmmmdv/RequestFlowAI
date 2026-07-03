@@ -1,5 +1,6 @@
 const config = window.REQUESTFLOW_CONFIG ?? window.MISSION_CONFIG ?? {};
 const tokenKey = 'mission-control-auth';
+const basicTokenKey = 'requestflow-basic-auth';
 const verifierKey = 'mission-control-pkce-verifier';
 const stateKey = 'mission-control-oauth-state';
 
@@ -20,16 +21,35 @@ function redirectUri() {
 }
 
 export function authenticationConfigured() {
-  return Boolean(config.cognitoDomain && config.clientId);
+  return config.authMode === 'basic' || Boolean(config.cognitoDomain && config.clientId);
 }
 
 export function getAccessToken() {
+  if (config.authMode === 'basic') return null;
   const session = JSON.parse(sessionStorage.getItem(tokenKey) ?? 'null');
   if (!session || session.expiresAt <= Date.now()) return null;
   return session.accessToken;
 }
 
+export function authorizationHeaders() {
+  if (config.authMode === 'basic') {
+    const credentials = sessionStorage.getItem(basicTokenKey);
+    return credentials ? { Authorization: `Basic ${credentials}` } : {};
+  }
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function login() {
+  if (config.authMode === 'basic') {
+    const email = prompt('Admin email');
+    if (!email) return;
+    const password = prompt('Admin password');
+    if (!password) return;
+    sessionStorage.setItem(basicTokenKey, btoa(`${email.trim().toLowerCase()}:${password}`));
+    location.reload();
+    return;
+  }
   const verifier = randomUrlSafe(64);
   const state = randomUrlSafe();
   sessionStorage.setItem(verifierKey, verifier);
@@ -44,12 +64,17 @@ export async function login() {
 
 export function logout() {
   sessionStorage.removeItem(tokenKey);
+  sessionStorage.removeItem(basicTokenKey);
   if (!authenticationConfigured()) return location.reload();
+  if (config.authMode === 'basic') return location.reload();
   const query = new URLSearchParams({ client_id: config.clientId, logout_uri: redirectUri() });
   location.assign(`${config.cognitoDomain}/logout?${query}`);
 }
 
 export async function initializeAuth() {
+  if (config.authMode === 'basic') {
+    return { authenticated: Boolean(sessionStorage.getItem(basicTokenKey)), configured: true, mode: 'basic' };
+  }
   if (!authenticationConfigured()) return { authenticated: false, configured: false };
   const query = new URLSearchParams(location.search);
   if (query.has('error')) throw new Error(query.get('error_description') ?? query.get('error'));

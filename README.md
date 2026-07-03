@@ -24,6 +24,25 @@ work moves forward.
 > the [five-minute demo](docs/portfolio/DEMO-SCRIPT.md) to inspect the product and its engineering
 > evidence.
 
+## Recommended lean MVP stack
+
+RequestFlow AI is now optimized for a low-cost startup path:
+
+- **Frontend:** Vercel-hosted browser app from `src/main/resources/static`
+- **Backend:** the existing Spring Boot API, kept because it owns the tested product logic
+- **Database:** Neon Postgres through standard `DATABASE_URL`
+- **Auth for founder-led demos:** environment-driven Basic Auth
+- **AI:** rule-based fallback by default; paid AI can be added later through env-controlled provider work
+
+The previous AWS stack is retained as optional legacy portfolio evidence, but it is **not the
+recommended early MVP deployment path**. NAT Gateway, RDS Multi-AZ, App Runner, VPC/public IPv4,
+Secrets Manager, and Cognito can create meaningful monthly cost before customer revenue.
+
+Start here:
+
+- [Vercel + Neon deployment guide](docs/deployment/vercel-neon.md)
+- [AWS to Neon migration guide](docs/migration/aws-to-neon.md)
+
 ## The product problem
 
 Small service teams receive requests through email, messages, calls, and forms. Important work is
@@ -56,20 +75,20 @@ validation remain before a commercial launch claim would be honest.
 | Public request form | Dedicated shareable page, slug-resolved portal, requester metadata, reference, idempotent submission | Implemented and tested |
 | Request-specific classification | Rule-based category, summary, priority suggestion, and next action | Implemented foundation; not an LLM |
 | Customer-facing landing and pricing | Responsive value proposition, plan limits, and calls to action | Implemented |
-| Start Free onboarding | Self-serve workspace setup after Cognito sign-in; onboarding wizard and API tested | Live production drill passed — see [DRILL-LOG.md](docs/saas/DRILL-LOG.md) |
+| Start Free onboarding | Self-serve workspace setup with non-AWS MVP auth or optional OAuth provider; onboarding wizard and API tested | Implemented foundation; live pilot validation still required |
 
 ## Why the engineering foundation matters
 
 RequestFlow AI is also a professional Java/Spring Boot portfolio project. The product layer sits on
 evidence that is deliberately difficult to fake:
 
-- signed JWT identity becomes a trusted tenant boundary at the repository layer;
+- server-side identity becomes a trusted tenant boundary at the repository layer;
 - agent actions create durable audit evidence tied to user, tenant, and correlation ID;
 - the same Flyway migrations run against fast local H2 and real PostgreSQL in CI;
 - REST, database-consistency, security, contract, and browser tests form one delivery gate;
 - organizations, memberships, invitations, plan quotas, and Stripe subscription state form the
   SaaS control plane;
-- Jenkins, GitHub Actions, Docker, CloudFormation, and operational docs show a path to release.
+- GitHub Actions, Docker, Neon-friendly Postgres configuration, and operational docs show a path to release.
 
 The assistant is intentionally deterministic and rule-based today. This keeps safety, approval,
 idempotency, and evaluation visible before an external LLM is introduced.
@@ -155,19 +174,22 @@ Open Grafana at [http://localhost:3000](http://localhost:3000) and Prometheus at
 [http://localhost:9090](http://localhost:9090), then use the dashboard to generate metrics and
 traces.
 
-Run against a production-shaped PostgreSQL database:
+Run against Neon or another production-shaped PostgreSQL database:
 
 ```bash
-docker compose up -d postgres
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/mission_control \
-SPRING_DATASOURCE_USERNAME=mission SPRING_DATASOURCE_PASSWORD=mission \
+export SPRING_PROFILES_ACTIVE=prod
+export DATABASE_URL="postgresql://USER:PASSWORD@HOST/neondb?sslmode=require"
+export FRONTEND_URL="http://localhost:8080"
+export REQUESTFLOW_SECURITY_PROVIDER=basic
+export ADMIN_EMAIL="owner@example.com"
+export ADMIN_PASSWORD_HASH="{bcrypt}REPLACE_WITH_A_REAL_HASH"
 ./mvnw spring-boot:run
 ```
 
-The `mission_control` database name and several `MISSION_*` configuration keys are retained as
-legacy deployment identifiers so existing environments do not break during the product rename.
-They are not the customer-facing product name. New deployments should use the RequestFlow aliases
-documented in the launch guide where available.
+The app accepts Neon-style `postgresql://...?...sslmode=require` URLs and converts them to the
+JDBC settings Spring Boot needs at startup. The `mission_control` database name and several
+`MISSION_*` keys are legacy identifiers only; new deployments should use the RequestFlow/Neon
+variables in `.env.example`.
 
 ## Engineering evidence
 
@@ -184,10 +206,11 @@ documented in the launch guide where available.
 | Agent behavior cannot silently regress | `AgentEvaluationTest` gates 27 golden and adversarial cases in CI |
 | Main cannot silently lose coverage | JaCoCo fails `verify` below 80% line coverage |
 | User journeys work in a browser | Playwright covers work items, approvals, quotas, invitations, and CRUD |
-| Production data has recovery controls | CloudFormation declares private encrypted RDS, backups, and snapshot retention |
+| Lean Postgres deployment works with Neon | `DATABASE_URL` normalization accepts standard Neon URLs with SSL |
+| Legacy AWS data recovery controls exist | Archived CloudFormation declares private encrypted RDS, backups, and snapshot retention |
 | Operators have diagnostic evidence | OTLP tracing, Grafana, CloudWatch, SLOs, and runbooks |
 | SaaS account controls exist | Organizations, memberships, invitations, quotas, Checkout, and webhooks have tests |
-| Browser secrets are not embedded | Cognito uses a public client and deploy-time public configuration |
+| Browser secrets are not embedded | Vercel config contains only public API/auth mode values; server secrets stay in API env vars |
 
 ## Architecture
 
@@ -198,8 +221,8 @@ flowchart LR
   API --> Triage["Rule-based category, priority, summary, next action"]
   Triage --> Work["Trackable work items"]
   Team["Team member"] --> UI["RequestFlow AI dashboard"]
-  Team --> Cognito["Amazon Cognito + PKCE"]
-  Cognito --> UI
+  Team --> Auth["Basic Auth MVP / optional OAuth"]
+  Auth --> UI
   UI --> API
   API --> Assistant["Rule-based planning assistant"]
   Assistant --> Policy["Safety + approval policy"]
@@ -207,6 +230,7 @@ flowchart LR
   Work --> DB[("H2 / PostgreSQL")]
   API --> DB
   API --> Stripe["Stripe Checkout + verified webhooks"]
+  DB -. lean default .-> Neon[("Neon Postgres")]
   Tests["JUnit + Testcontainers + Playwright"] --> API
   Tests --> UI
 ```
@@ -252,9 +276,9 @@ planning assistants are deterministic rules, not an external LLM.
 - [x] Tenant-scoped persistence with tested cross-tenant isolation
 - [x] Enforced FREE/PRO/BUSINESS quotas
 - [x] Stripe Checkout and timestamped, constant-time verified webhooks
-- [x] Cognito resource-server configuration and browser PKCE flow
-- [x] Flyway, PostgreSQL Testcontainers, CI, coverage gate, and Playwright journeys
-- [x] AWS and observability infrastructure as code
+- [x] Basic Auth MVP mode plus optional OAuth2 resource-server configuration
+- [x] Flyway, Neon-friendly PostgreSQL URLs, PostgreSQL Testcontainers, CI, coverage gate, and Playwright journeys
+- [x] Vercel static frontend config and legacy AWS/observability infrastructure evidence
 
 ### Required before a production-backed pilot
 
@@ -263,7 +287,7 @@ planning assistants are deterministic rules, not an external LLM.
 - [ ] Complete hosted pilot gate — [PRODUCTION-PILOT-CHECKLIST.md](docs/saas/PRODUCTION-PILOT-CHECKLIST.md)
 - [x] Run and record Cognito signup drill — [EXTERNAL-DRILLS.md](docs/saas/EXTERNAL-DRILLS.md) and [DRILL-LOG.md](docs/saas/DRILL-LOG.md)
 - [ ] Run and record invitation transfer and Stripe test Checkout drills — [EXTERNAL-DRILLS.md](docs/saas/EXTERNAL-DRILLS.md)
-- [ ] Run and record the AWS restore drill — [RESTORE-DRILL.md](docs/operations/RESTORE-DRILL.md)
+- [ ] Complete Neon backup/export verification before deleting any remaining AWS data
 - [x] Add pilot onboarding, support, privacy, and data-retention documentation
 - [ ] Validate the workflow with first pilot users before claiming commercial launch readiness
 
@@ -285,6 +309,13 @@ Real estate pilot demo pack:
 - [Real estate demo script](docs/business/REAL_ESTATE_DEMO_SCRIPT.md)
 - [Real estate sample requests](docs/business/REAL_ESTATE_SAMPLE_REQUESTS.md)
 - [Real estate pilot offer](docs/business/REAL_ESTATE_PILOT_OFFER.md)
+- [Real estate outreach — ready to send](docs/business/REAL_ESTATE_OUTREACH_READY.md)
+
+Revenue and first payments:
+
+- [14-day revenue sprint](docs/business/REVENUE_SPRINT_14_DAYS.md)
+- [First payment playbook](docs/business/FIRST_PAYMENT_PLAYBOOK.md)
+- [Pre-call ready / not ready checklist](docs/business/PRE_CALL_READY_CHECKLIST.md)
 
 ## Finance documentation
 
@@ -316,7 +347,7 @@ Lean SaaS budgeting, pricing, and unit-economics planning for founder-led pilots
 | Portfolio and investor material | `docs/portfolio/CASE-STUDY.md`, `JOB-SEARCH-KIT.md`, `INVESTOR-ONE-PAGER.md`, `PILOT-OUTREACH.md` |
 | Browser experience | `src/main/resources/static`, `e2e/`, and Playwright configuration |
 | Data confidence | Flyway, H2, PostgreSQL Testcontainers, API/database consistency tests |
-| Delivery | GitHub Actions, Jenkins, Docker, CloudFormation, App Runner concepts |
+| Delivery | GitHub Actions, Docker, Vercel static deploy, Neon Postgres config, legacy CloudFormation/App Runner concepts |
 | Operations | OpenTelemetry, Prometheus, Grafana, Tempo, CloudWatch, SLOs, and runbooks |
 
 The repository remains intentionally useful for both SaaS launch preparation and professional
@@ -331,4 +362,5 @@ real external drills agree.
 - Automated actions must be bounded, observable, and safe to retry.
 - Tenant identity comes only from a verified boundary; never trust a client-supplied tenant ID.
 - Demo mode and production mode must remain clearly separated.
-- Cloud resources are declared as code and reviewed before deployment.
+- The default deployment path is Vercel + Neon; the AWS stack is optional legacy evidence and should
+  not be kept running during early MVP validation unless there is a deliberate reason.

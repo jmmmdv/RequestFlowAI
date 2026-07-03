@@ -10,6 +10,19 @@ prioritize outreach and pick a strong first question per industry.
 
 ---
 
+## Real estate professionals
+
+| | |
+|---|---|
+| **Examples** | Solo realtor, small team, broker office, property advisor |
+| **Why they may need RequestFlowAI** | Buyer/seller leads, showings, valuations from many channels |
+| **Likely pain** | Leads buried during open houses; slow follow-up; no shared queue |
+| **First question** | "When a buyer texts on Saturday during showings, how do you make sure someone replies Monday?" |
+| **Pilot fit** | **Good fit** — warm intros decide fast; see [REAL_ESTATE_PILOT_NOTES.md](REAL_ESTATE_PILOT_NOTES.md) |
+| **Outreach** | [REAL_ESTATE_OUTREACH_READY.md](REAL_ESTATE_OUTREACH_READY.md) |
+
+---
+
 ## Local service businesses
 
 | | |
@@ -98,13 +111,14 @@ prioritize outreach and pick a strong first question per industry.
 
 Suggested outreach order for fastest learning:
 
-1. Home repair / service companies  
-2. Local service businesses  
-3. Transportation / limo (if no heavy dispatch lock-in)  
-4. Education / tutoring  
-5. Small law / accounting  
-6. Property management (small portfolios)  
-7. Medical / dental — only with clear non-PHI angle and warm trust  
+1. **Real estate** (if you have a warm intro — see [REAL_ESTATE_OUTREACH_READY.md](REAL_ESTATE_OUTREACH_READY.md))  
+2. Home repair / service companies  
+3. Local service businesses  
+4. Transportation / limo (if no heavy dispatch lock-in)  
+5. Education / tutoring  
+6. Small law / accounting  
+7. Property management (small portfolios)  
+8. Medical / dental — only with clear non-PHI angle and warm trust  
 
 ---
 

@@ -1,4 +1,4 @@
-import { apiBaseUrl, authenticationConfigured, getAccessToken, initializeAuth, login, logout, publicOrganizationSlug } from './auth.js';
+import { apiBaseUrl, authenticationConfigured, authorizationHeaders, initializeAuth, login, logout, publicOrganizationSlug } from './auth.js';
 
 const board = document.querySelector('#board');
 const errorBox = document.querySelector('#error');
@@ -23,7 +23,7 @@ if (authState.configured && !demoMode) {
   loginButton.hidden = authState.authenticated;
   logoutButton.hidden = !authState.authenticated;
   document.querySelector('#account-status').textContent = authState.error
-    ? authState.error.message : authState.authenticated ? 'Authenticated with Cognito' : 'Sign in to use the production API';
+    ? authState.error.message : authState.authenticated ? 'Signed in' : 'Sign in to use the production API';
 }
 loginButton.addEventListener('click', login);
 logoutButton.addEventListener('click', logout);
@@ -250,10 +250,9 @@ if (demoMode) document.querySelector('#demo-notice').hidden = false;
 async function api(path, options = {}) {
   if (demoMode) return demoApi(path, options);
   const { headers = {}, ...requestOptions } = options;
-  const token = getAccessToken();
   const response = await fetch(`${apiBaseUrl()}${path}`, {
     ...requestOptions,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
+    headers: { 'Content-Type': 'application/json', ...authorizationHeaders(), ...headers },
   });
   if (!response.ok) {
     const problem = await response.json().catch(() => ({}));

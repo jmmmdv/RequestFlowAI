@@ -3,8 +3,8 @@ package com.fromzerotohero.mission.saas;
 import java.util.UUID;
 
 /**
- * Transfers a Cognito user's tenant claims after they accept a team invitation.
- * No-op in local development; production uses Admin APIs when a user pool is configured.
+ * Optional hook for external identity providers after a team invitation is accepted.
+ * The lean Vercel + Neon MVP uses the no-op implementation.
  */
 public interface IdentityTenantSync {
 

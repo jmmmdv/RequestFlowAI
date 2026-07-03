@@ -2,6 +2,7 @@ package com.fromzerotohero.mission.security;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.http.HttpMethod;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -35,8 +39,37 @@ public class SecurityConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "mission.security.enabled", havingValue = "true")
-    SecurityFilterChain productionSecurity(HttpSecurity http) throws Exception {
+    @ConditionalOnExpression("'${mission.security.enabled:false}' == 'true' && '${mission.security.provider:oauth2}' == 'basic'")
+    SecurityFilterChain basicSecurity(HttpSecurity http) throws Exception {
+        return protectedApi(http)
+                .httpBasic(Customizer.withDefaults())
+                .build();
+    }
+
+    @Bean
+    @ConditionalOnExpression("'${mission.security.enabled:false}' == 'true' && '${mission.security.provider:oauth2}' == 'basic'")
+    UserDetailsService adminUserDetails(
+            @Value("${requestflow.admin.email:}") String email,
+            @Value("${requestflow.admin.password-hash:}") String passwordHash) {
+        String username = email == null || email.isBlank() ? "admin@example.com" : email.trim().toLowerCase();
+        String password = passwordHash == null || passwordHash.isBlank()
+                ? "{noop}change-me-before-using-postgres" : passwordHash;
+        return new InMemoryUserDetailsManager(User.withUsername(username)
+                .password(password)
+                .roles("ADMIN", "MEMBER")
+                .build());
+    }
+
+    @Bean
+    @ConditionalOnExpression("'${mission.security.enabled:false}' == 'true' && '${mission.security.provider:oauth2}' == 'oauth2'")
+    SecurityFilterChain oauth2Security(HttpSecurity http) throws Exception {
+        return protectedApi(http)
+                .oauth2ResourceServer(oauth -> oauth.jwt(jwt ->
+                        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                .build();
+    }
+
+    private HttpSecurity protectedApi(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -62,10 +95,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/work-items/**").hasAnyRole("MEMBER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/work-items/**").hasAnyRole("MEMBER", "ADMIN")
                         .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll())
-                .oauth2ResourceServer(oauth -> oauth.jwt(jwt ->
-                        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
-                .build();
+                        .anyRequest().permitAll());
     }
 
     @Bean

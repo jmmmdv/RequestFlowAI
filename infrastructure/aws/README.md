@@ -1,5 +1,11 @@
 # RequestFlow AI AWS production deployment
 
+> **Legacy / optional path:** This stack is retained as production-shaped portfolio evidence and
+> for teams that deliberately want AWS. It is **not** the recommended early MVP path because App
+> Runner, RDS Multi-AZ, NAT Gateway, VPC/public IPv4, Secrets Manager, and Cognito can create
+> meaningful monthly cost before revenue. For the lean default, use
+> [Vercel + Neon](../../docs/deployment/vercel-neon.md).
+
 The CloudFormation stack deploys one production-shaped vertical slice:
 
 - App Runner from an immutable ECR image;

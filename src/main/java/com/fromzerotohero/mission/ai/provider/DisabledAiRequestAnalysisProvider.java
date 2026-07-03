@@ -21,6 +21,10 @@ public class DisabledAiRequestAnalysisProvider implements AiRequestAnalysisProvi
         if (!properties.isEnabled()) {
             return Optional.empty();
         }
+        if (!properties.hasOpenaiApiKey()) {
+            log.info("Paid AI provider is enabled but OPENAI_API_KEY is not configured; using rule-based fallback");
+            return Optional.empty();
+        }
         log.info("Paid AI provider is enabled but no external implementation is wired; using rule-based fallback");
         return Optional.empty();
     }

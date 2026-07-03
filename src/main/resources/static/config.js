@@ -1,6 +1,7 @@
-// Generated at deploy time. These values are public OAuth client configuration, never secrets.
+// Generated at deploy time. These values are public browser configuration, never secrets.
 window.REQUESTFLOW_CONFIG = Object.freeze({
   "apiBaseUrl": "",
+  "authMode": "none",
   "cognitoDomain": "",
   "clientId": "",
   "publicOrganizationSlug": "local"
